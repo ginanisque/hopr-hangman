@@ -1,0 +1,22 @@
+.modal {
+    display: flex;
+    background: rgba(0,0,0,0.3);
+}
+
+.modal__background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+.modal__content {
+    margin: auto;
+    position: relative;
+}
+
+.modal__close-button {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
