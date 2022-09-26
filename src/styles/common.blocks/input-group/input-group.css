@@ -1,3 +1,8 @@
 .input-group {
     display: block;
 }
+.input-group__input {
+    padding: 0.5em 0.3em;
+    border-radius: 5px;
+    border: 1px solid black;
+}

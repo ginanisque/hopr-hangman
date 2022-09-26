@@ -1,7 +1,10 @@
 import "./card/card.css";
+import "./link/link.css";
 import "./button/button.css";
 import "./button/button_selector.css";
 import "./modal/modal.css";
+
+import "./navbar/navbar.css";
 import "./page/page.css";
 import "./page/__element.css";
 

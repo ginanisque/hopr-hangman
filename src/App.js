@@ -11,6 +11,8 @@ import ConfigPanel from './config/configPanel.jsx';
 import { getAddress } from './connectivity/hoprNode.js';
 import useWebSocket from './connectivity/useWebSocket.js';
 
+import { FaCog } from "react-icons/fa";
+
 class App extends React.Component {
     constructor() {
         super();
@@ -91,8 +93,10 @@ class App extends React.Component {
         // Home
         let view = (
             <div className="App page page_home">
+                <div className='navbar'>
+                    <button className='link navbar__link navbar__link_settings' onClick={() => this.setState({showConfig: true})}><FaCog /></button>
+                </div>
                 <p className='page__title'>Hopr Hangman</p>
-                <button className='button' onClick={() => this.setState({showConfig: true})}>Settings</button>
                 { this.state.showConfig == true &&
                     <ConfigPanel className='page__modal' onSave={this.loadAddress} handleClose={() => this.setState({showConfig: false})}/>
                 }

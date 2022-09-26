@@ -48,18 +48,18 @@ class ConfigPanel extends React.Component {
                     
                     <button className='modal__close-button button' onClick={this.props.handleClose}>Close</button>
                     
-                    <label className='input-group'>Hopr Node http  url:
-                        <input type='text'
+                    <label className='page__element input-group'>Hopr Node http  url:
+                        <input className='input-group__input' type='text'
                             value={this.state.nodeRestURL} onChange={this.setNodeRestURL}
                             placeholder='http://hoprnode.io/api/v2' />
                     </label>
 
-                    <label className='input-group'>HOPR authentication code:
-                        <input type='text' value={this.state.authToken} onChange={this.setAuthToken} />
+                    <label className='page__element input-group'>HOPR authentication code:
+                        <input className='input-group__input' type='text' value={this.state.authToken} onChange={this.setAuthToken} />
                     </label>
 
-                    <label className='input-group'>WS Endpoint:
-                        <input type='text' value={this.state.wsEndpoint} onChange={this.setWsEndpoint} />
+                    <label className='page__element input-group'>WS Endpoint:
+                        <input type='text' className='input-group__input' value={this.state.wsEndpoint} onChange={this.setWsEndpoint} />
                     </label>
 
                     <button className='button button_primary' onClick={this.save}>Save</button>
