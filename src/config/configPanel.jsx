@@ -6,17 +6,20 @@ class ConfigPanel extends React.Component {
         super();
         this.state = {
             nodeRestURL: config.restURL,
-            authToken: config.authToken
+            authToken: config.authToken,
+            wsEndpoint: config.wsEndpoint
         }
 
         this.setNodeRestURL = this.setNodeRestURL.bind(this);
         this.setAuthToken = this.setAuthToken.bind(this);
+        this.setWsEndpoint = this.setWsEndpoint.bind(this);
         this.save = this.save.bind(this);
     }
 
     save() {
         config.restURL = this.state.nodeRestURL;
         config.authToken = this.state.authToken;
+        config.wsEndpoint = this.state.wsEndpoint;
 
         this.props.onSave();
     }
@@ -29,6 +32,11 @@ class ConfigPanel extends React.Component {
     setAuthToken(e) {
         const value = e.target.value;
         this.setState({ authToken: value });
+    }
+
+    setWsEndpoint(e) {
+        const value = e.target.value;
+        this.setState({ wsEndpoint: value });
     }
 
     render() {
@@ -48,6 +56,10 @@ class ConfigPanel extends React.Component {
 
                     <label className='input-group'>HOPR authentication code:
                         <input type='text' value={this.state.authToken} onChange={this.setAuthToken} />
+                    </label>
+
+                    <label className='input-group'>WS Endpoint:
+                        <input type='text' value={this.state.wsEndpoint} onChange={this.setWsEndpoint} />
                     </label>
 
                     <button className='button button_primary' onClick={this.save}>Save</button>

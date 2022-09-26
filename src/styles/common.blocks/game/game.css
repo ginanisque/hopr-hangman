@@ -1,0 +1,14 @@
+.game__player-list {
+    margin-left: auto;
+}
+.game__hangman {
+}
+
+.game__word {
+    margin: auto;
+    width: fit-content;
+}
+.game__keyboard {
+    margin: 3rem auto;
+    width: 80%;
+}

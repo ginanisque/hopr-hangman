@@ -9,6 +9,7 @@ class Config {
     reload() {
         this._restURL = this.retrieve('restURL') || "";
         this._authToken = this.retrieve('authToken') || "";
+        this._wsEndpoint = this.retrieve('wsEndpoint') || "";
     }
 
     retrieve(key) {
@@ -20,6 +21,13 @@ class Config {
         const url = new URL(window.location.href);
         url.searchParams.set(key, val);
         window.history.pushState({}, '', url);
+    }
+
+    set wsEndpoint(val) {
+        this.save('wsEndpoint', val);
+    }
+    get wsEndpoint() {
+        return this.retrieve('wsEndpoint');
     }
 
     set restURL(val) {

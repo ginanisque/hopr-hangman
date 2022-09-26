@@ -17,10 +17,16 @@ class App extends React.Component {
         this.state = {
             showGame: false,
             game: null,
+
+            // Game data
+            multiplayer: true,
+            connectGame: false,
+            otherPlayers: [],
+            gameCreator: "",
+
             route: 'home',
             address: null,
             showConfig: false,
-            otherPlayers: [],
             inputs: {
                 newPlayer: "",
             }
@@ -84,53 +90,86 @@ class App extends React.Component {
 
         // Home
         let view = (
-            <div className="App page">
+            <div className="App page page_home">
                 <p className='page__title'>Hopr Hangman</p>
                 <button className='button' onClick={() => this.setState({showConfig: true})}>Settings</button>
                 { this.state.showConfig == true &&
                     <ConfigPanel className='page__modal' onSave={this.loadAddress} handleClose={() => this.setState({showConfig: false})}/>
                 }
                 <p>Your Hopr Address: { hoprAddress }</p>
-                <button className={'button button_selector ' + (!this.state.multiplayer && 'button_selector_active')} onClick={() => this.setState({multiplayer: false})}>Play Alone</button>
-                <button className={'button button_selector ' + (this.state.multiplayer && 'button_selector_active')} onClick={() => this.setState({multiplayer: true})}>Play with other players</button>
+                <div className='group_small-gap group_flex group_flex_center page__element'>
+                    <button className={'button button_selector ' +
+                        (!this.state.multiplayer && 'button_selector_active')}
+                        onClick={() => this.setState({multiplayer: false})}>Play Alone</button>
+                    <button className={'button button_selector ' +
+                        (this.state.multiplayer && !this.state.connectGame && 'button_selector_active')}
+                        onClick={() => this.setState({multiplayer: true, connectGame: false})}>Play with other players</button>
+                    <button className={'button button_selector ' + (this.state.multiplayer && this.state.connectGame && 'button_selector_active')} onClick={() => this.setState({multiplayer: true, connectGame: true})}>Connect to game</button>
+                </div>
 
                 {
                     this.state.multiplayer && (
-                        <div>
-                            {
-                                this.state.otherPlayers.map((addr, index) => {
-                                    return (
-                                        <label className='input-group' key={'player-' + index}>
-                                            <span className='input-group__label'>Player {index + 2}: </span>
-                                            <input className='input-group__input' type='text' value={addr} disabled />
-                                        </label>
-                                    );
-                                })
-                            }
-                            <label className='input-group'>
-                                <span className=' input-group__label'>Player Hopr Address: </span>
-                                <input type='text' placeholder='PeerID'
-                                    value={this.state.inputs.newPlayer}
-                                    onChange={(e) => this.setInput('newPlayer', e.target.value)}
-                                />
-                            </label>
-                            <button className='button' onClick={() => {this.addNewPlayer(this.state.inputs.newPlayer)}}>Add New Player</button>
+                        <div className='page__element'>
+                        {!this.state.connectGame && (
+                            <div>
+                                {
+                                    this.state.otherPlayers.map((addr, index) => {
+                                        return (
+                                            <label className='input-group' key={'player-' + index}>
+                                                <span className='input-group__label'>Player {index + 2}: </span>
+                                                <input className='input-group__input' type='text' value={addr} disabled />
+                                            </label>
+                                        );
+                                    })
+                                }
+                                <label className='input-group page__element'>
+                                    <span className=' input-group__label'>Player Hopr Address: </span>
+                                    <input type='text' placeholder='PeerID'
+                                        value={this.state.inputs.newPlayer}
+                                        onChange={(e) => this.setInput('newPlayer', e.target.value)}
+                                    />
+                                </label>
+                                <button className='button page__element' onClick={() => {this.addNewPlayer(this.state.inputs.newPlayer)}}>Add New Player</button>
+                            </div>
+                        )}
+
+                        {this.state.connectGame && (
+                            <div className='page__element'>
+                                <label className='input-group page__element'>
+                                    <span className='input-group__label'>Enter address: </span>
+                                    <input type='text' placeholder='Game creator peer id'
+                                        value={this.state.gameCreator}
+                                        onChange={(e) => this.setState({gameCreator: e.target.value})}
+                                    />
+                                </label>
+                            </div>
+                        )}
                         </div>
                     )
                 }
-                    <div>
-                        <button className='button button_primary' onClick={this.startGame }>Start Game</button>
-                    </div>
+                <div className='page__element'>
+                    <button className='button button_primary' onClick={this.startGame}>Start Game</button>
+                </div>
             </div>
         );
 
         if(route == 'game') {
             view = [
                 menu,
-                <GameView otherPlayers={
-                    this.state.multiplayer ? 
-                    this.state.otherPlayers : null
-                } />
+                <GameView
+                    config={{
+                        multiplayer: this.state.multiplayer,
+                        connectGame: this.state.connectGame,
+                        otherPlayers: this.state.otherPlayers,
+                        gameCreator: this.state.gameCreator
+                    }}
+
+                    otherPlayers={
+                        this.state.multiplayer ? 
+                            this.state.otherPlayers : null
+                    }
+                    gameCreator={this.state.gameCreator}
+                />
             ];
         }
 

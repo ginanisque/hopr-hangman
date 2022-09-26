@@ -31,10 +31,16 @@ function callAPI(path, body) {
     return fetch(`${hopr_node_http_url}/api/v2/${path}`, fetchConfig)
         .then(res => {
             return res.json()
+                .catch(e => {
+                    return {};
+                })
                 .then(jsonRes => {
                     if(res.ok)
                         return jsonRes;
                     else {
+                        if(res && typeof res == 'object')
+                            return res;
+
                         let errorMessage = res.statusText;
 
                         if(jsonRes.error)
@@ -58,19 +64,44 @@ export function getAddress() {
     else return Promise.resolve(null);
 }
 
-export function establishChannel(hoprAddr, type='incoming', amount=10000000) {
+export function establishChannel(hoprAddr, amount='1000000000000000000') {
     const body = {
-        type,
-        peerID: hoprAddr,
+        peerId: hoprAddr,
         amount
     }
 
-    return callAPI('channels', body);
+    return callAPI('channels', body)
+        .catch(e => {
+            if(e.status)
+                throw e.status;
+            else {
+                throw e;
+            }
+        });
+}
+
+export function getChannels(hoprAddr) {
+    if(hoprAddr && /^16Uiu/.test(hoprAddr)) {
+        return callAPI('channels/' + hoprAddr)
+            .then(res => {
+                // console.log("channesl:", res);
+                return res;
+            });
+    } else {
+        return callAPI('channels')
+    }
 }
 
 export function sendHoprMessage(hoprAddr, message, path) {
     if(!path)
-        path = [ hoprAddr ];
+        path = [];
+
+    try {
+        message = JSON.stringify(message);
+    } catch(e) {
+        console.log("cannot stringify message");
+    }
+
     if(hoprNodeHttpUrl()) {
         const body = {
             recipient: hoprAddr,
@@ -78,5 +109,9 @@ export function sendHoprMessage(hoprAddr, message, path) {
             path,
         };
         return callAPI('messages', body)
+            .then(res => {
+                console.log("send hopr message", res);
+                return res;
+            });
     }
 }

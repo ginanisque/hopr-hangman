@@ -8,7 +8,7 @@ class Word extends React.Component {
     render() {
         const word = this.props.game.word;
         return (
-            <div className='game-word'>
+            <div className='game-word game__word'>
                 {word.split("").map(letter => {
                     return <div class='game-word__letter'>
                         {letter}

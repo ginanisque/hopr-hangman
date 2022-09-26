@@ -4,26 +4,14 @@ class Keyboard extends React.Component {
     constructor(props) {
         super();
         this.state = {
-            badKeys: [],
-            goodKeys: []
         }
         this.clickKey = this.clickKey.bind(this);
     }
 
     clickKey(key) {
-        let badKeys = this.state.badKeys;
-        let goodKeys = this.state.goodKeys;
-
         const game = this.props.game;
         const result = game.guessLetter(key);
-        console.log('result:', result);
 
-        if(!result)
-            badKeys.push(key);
-        else
-            goodKeys.push(key);
-
-        this.setState({badKeys, goodKeys});
         this.props.onGameUpdate(game);
     }
 
@@ -39,8 +27,8 @@ class Keyboard extends React.Component {
                     className={
                         [
                             "keyboard__key",
-                            ["keyboard__key", this.state.badKeys.includes(key) ? "red" :
-                                this.state.goodKeys.includes(key) ? "green" : "unselected"].join('_'),
+                            ["keyboard__key", game.wrongGuesses.includes(key) ? "red" :
+                                game.correctGuesses.includes(key) ? "green" : "unselected"].join('_'),
                         ].join(" ")
                     }
                     onClick={() => this.clickKey(key)}>
@@ -50,7 +38,7 @@ class Keyboard extends React.Component {
         }
 
         return (
-            <div className='keyboard'>
+            <div className='keyboard game__keyboard'>
                 { keys }
             </div>
         );

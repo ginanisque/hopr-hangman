@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import useWebsocket from './useWebSocket'
 
-export const WebSocketHandler = ({ wsEndpoint, securityToken }) => {
+export const WebSocketHandler = ({ wsEndpoint, securityToken, game }) => {
   const [message, setMessage] = useState('')
   const websocket = useWebsocket({ wsEndpoint, securityToken })
   const { socketRef } = websocket
@@ -9,9 +9,9 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken }) => {
     try {
       // we are only interested in messages, not all the other events coming in on the socket
       const data = JSON.parse(ev.data)
-      console.log('WebSocket Data', data)
       if (data.type === 'message') {
         setMessage(data.msg)
+        game.multiplayer.parseMessage(data.msg);
       }
     } catch (err) {
       console.error(err)
@@ -27,7 +27,9 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken }) => {
     }
   }, [socketRef.current])
 
-  return <span>{message ? message : 'You have no messages.'}</span>
+  // return message || false;
+  return false;
+  // return <span>{message ? message : 'You have no messages.'}</span>
 }
 
 export default WebSocketHandler

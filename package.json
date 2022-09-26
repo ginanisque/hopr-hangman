@@ -17,6 +17,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "npm run test-karma",
+    "test-system": "TESTS=system npm run test-karma",
+    "test-network": "TESTS=network npm run test-karma",
     "test-karma": "export NODE_ENV=development && . ./.env.test && karma start",
     "eject": "react-scripts eject"
   },
@@ -32,7 +34,10 @@
     "not op_mini all"
   ],
   "devDependencies": {
+    "@faker-js/faker": "^7.5.0",
+    "babel-plugin-rewire": "^1.2.0",
     "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
     "karma": "^6.4.0",
     "karma-babel-preprocessor": "^8.0.2",
     "karma-chrome-launcher": "^3.1.1",

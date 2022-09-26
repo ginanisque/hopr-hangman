@@ -1,6 +1,7 @@
 import sowpodslist from '../wordlists/sowpods';
 import { randomWord } from './words';
 import { sendHoprMessage, establishChannel } from '../connectivity/hoprNode.js';
+import Multiplayer from './multiplayer.js';
 
 const MAX_SCORE=5;
 
@@ -11,34 +12,38 @@ class Game {
     _incorrectGuesses = 0;
     _score = 0;
     rounds = [];
+    isGameCreator=false;
 
-    constructor(otherPlayers=[]) {
-        this.otherPlayers = otherPlayers || [];
+    constructor(otherConfig={}) {
+        this.config = otherConfig;
+        this.otherPlayers = otherConfig.otherPlayers || [];
+        this.gameCreator = otherConfig.gameCreator;
 
-        this.pastAnswers = [];
-        this.wordlist = sowpodslist;
-        this.wrongGuesses = [];
-        this.rightGuesses = []
-
+        this.initGame();
         this.setup();
-        this.reset();
     }
 
     setup() {
         const otherPlayers = this.otherPlayers;
 
-        let prChain = Promise.resolve(true);
-
-        otherPlayers.forEach(addr => {
-            prChain = prChain.then(() =>
-                establishChannel(addr, 'outgoing')
-            )
-        });
-
-        return prChain;
+        this.multiplayer = new Multiplayer(this.otherPlayers, this.gameCreator);
     }
 
-    reset() {
+    startGame() {
+        return this.multiplayer.start();
+    }
+
+    initGame() {
+        this.wordlist = sowpodslist;
+        this.pastAnswers = [];
+        this.gameOverAction = () => Promise.resolve(true);
+        this.roundOverAction = () => Promise.resolve(true);
+        this._currentRound = 0;
+
+        this.initRound();
+    }
+
+    initRound() {
         this.word = null;
         this.answer = randomWord(this.wordlist);
 
@@ -46,45 +51,42 @@ class Game {
             this.answer = randomWord(this.wordlist);
         }
 
+        this._currentRound++;
         this.wrongGuesses = [];
-        this.guessedLetters = [];
+        this.correctGuesses = [];
+        this.incorrectGuesses = 0;
     }
 
     get round() {
         return this._currentRound;
     }
 
-    restart() {
-        this.reset();
-    }
-
-    newRound(score=0) {
-        const roundData = {
+    get roundData() {
+        return {
+            num: this._currentRound,
+            app: 'hangman',
+            type: 'roundData',
             guess: this.word,
             word: this.answer,
-            score
+            gameScore: this.score,
         };
+    }
 
-        this.rounds.push(roundData);
+    newRound(roundScore=0) {
+        const roundData = this.roundData;
+        this.rounds.push({...roundData, roundScore});
 
-        if(this._currentRound > 0)
-            this.sendRoundData(roundData);
+        if(this._currentRound > 0) {
+            this.roundOver(roundData);
+        }
 
-        this.reset();
-        this._currentRound++;
+        if(this._currentRound < 5)
+            this.initRound();
+        else this.gameOver();
     }
 
     sendRoundData(roundData) {
-        const otherPlayers = this.otherPlayers;
-
-        let promiseChain = Promise.resolve();
-        if(otherPlayers && otherPlayers.length > 0) {
-            otherPlayers.forEach(peerID => {
-                promiseChain = promiseChain.then(() =>
-                    sendHoprMessage(peerID, JSON.stringify(roundData))); });
-        }
-
-        return promiseChain;
+        return this.multiplayer.sendRoundScores(roundData);
     }
 
     get score() {
@@ -123,23 +125,26 @@ class Game {
         return _word;
     }
 
+    // If player guesses word correctly, start new round
     set word(val) {
         this._word = val;
 
         if(val === this.answer) {
-            let score = MAX_SCORE;
+            let roundScore_ = MAX_SCORE;
 
             if(this.incorrectGuesses > 3)
-                score = score - (this.incorrectGuesses - 3);
+                roundScore_ = roundScore_ - (this.incorrectGuesses - 3);
 
-            this.score += score;
-            this.newRound(score);
+            this.score += roundScore_;
+            // this.roundScore = roundScore_
+            this.newRound(roundScore_);
         }
     }
 
     get incorrectGuesses() {
         return this._incorrectGuesses;
     }
+    // If player has too many incorrect guesses (8), start new round
     set incorrectGuesses(val) {
         this._incorrectGuesses = val;
         if(val == 8)
@@ -173,10 +178,34 @@ class Game {
         }
 
         this.word = word;
-        if(isCorrect === false)
+        if(isCorrect === true)
+            this.correctGuesses.push(letter);
+        if(isCorrect === false) {
+            this.wrongGuesses.push(letter);
             this.incorrectGuesses++
+        }
 
         return isCorrect;
+    }
+
+    onGameOver(cb) {
+        this.gameOverAction = cb;
+    }
+
+    gameOver() {
+        return Promise.resolve(true)
+            .then(() => this.multiplayer.sendGameOver({gameScore: this.gameScore, score: this.gameScore}))
+            .then(() =>this.gameOverAction());
+    }
+
+    onRoundOver(cb) {
+        this.roundOverAction = cb;
+    }
+
+    roundOver(roundData) {
+        return Promise.resolve(true)
+            .then(() => this.sendRoundData(roundData))
+            .then(() => this.roundOverAction());
     }
 }
 

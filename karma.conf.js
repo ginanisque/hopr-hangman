@@ -11,17 +11,28 @@ module.exports = function(config) {
             target, stats, mode, bail, devtool, entry, cache, infrastructureLogging,
             optimization, resolve, 
             plugins: [plugins[0], plugins[1], plugins[3]]
+            // plugins: [plugins[0], plugins[1], plugins[3], new RewirePlugin()]
             // plugins
         }
     }
+
+    const files = [];
+
+    if(process.env.TESTS == 'system') {
+        files.push('tests/system.tests/tests.webpack.js')
+    } else if(process.env.TESTS == 'network') {
+        files.push('tests/network.tests/tests.webpack.js')
+    } else {
+        files.push('tests.webpack.js')
+    }
+
+    console.log("files:", files);
 
     config.set({
         browsers: [ 'Chrome' ], //run in Chrome
         singleRun: false,
         frameworks: [ 'webpack', 'mocha' ], //use the mocha test framework
-        files: [
-            'tests.webpack.js' //just load this file
-        ],
+        files,
         browserNoActivityTimeout: 10000,
         plugins: [
             'karma-mocha',
@@ -32,6 +43,8 @@ module.exports = function(config) {
         ],
         preprocessors: {
             'tests.webpack.js': [ 'webpack', 'sourcemap' ], //preprocess with webpack and our sourcemap loader
+            'tests/network.tests/tests.webpack.js': [ 'webpack', 'sourcemap' ],
+            'tests/system.tests/tests.webpack.js': [ 'webpack', 'sourcemap' ],
         },
         // reporters: [ 'dots' ], //report results in this format
         reporters: ['progress'],

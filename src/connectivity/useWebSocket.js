@@ -70,6 +70,7 @@ const useWebsocket = (settings) => {
       // handle errors
       socketRef.current.addEventListener('error', handleErrorEvent)
     } catch (err) {
+        console.log("err:", err);
       console.error('URL is invalid', settings.wsEndpoint)
     }
 
