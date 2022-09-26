@@ -15,7 +15,6 @@ class Hangman extends React.Component {
             <div className='game__hangman'>
                 <div className = 'hangman hangman__head'>
                 </div>
-            {game.incorrectGuesses}
 
                 <svg className = 'hangman hangman__noose'>
                 </svg>

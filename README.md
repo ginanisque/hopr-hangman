@@ -1,16 +1,24 @@
-# Getting Started with Create React App
+# HOPR Hangman
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+HOPR Hangman is an in-browser hangman game powered by HOPR
+
+https://user-images.githubusercontent.com/71918838/192206058-9e83a24a-3e17-410f-8671-a1ecff54b67b.mp4
+
+##  How to start
+HOPR hangman needs the following configuration values
+- apiEndpoint
+- apiToken
+- Web Socket endpoint
+
+Each of these can be set in the url 
+eg: `http://localhost:3000/?apiEndpoint=http://localhost:3001&apiToken=^^LOCAL-testing-123^^&wsEndpoint=ws://localhost:19502`
+
+
+These values can also be set in the config settings
 
 ## Available Scripts
 
 In the project directory, you can run:
-
-
-https://user-images.githubusercontent.com/71918838/192206058-9e83a24a-3e17-410f-8671-a1ecff54b67b.mp4
-
-
-
 
 ### `npm start`
 
@@ -22,8 +30,7 @@ You may also see any lint errors in the console.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This project uses karma and mocha to test.
 
 ### `npm run build`
 
