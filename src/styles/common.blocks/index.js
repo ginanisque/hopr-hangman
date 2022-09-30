@@ -3,6 +3,7 @@ import "./link/link.css";
 import "./button/button.css";
 import "./button/button_selector.css";
 import "./modal/modal.css";
+import "./notice/notice.css";
 
 import "./navbar/navbar.css";
 import "./page/page.css";

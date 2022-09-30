@@ -51,7 +51,7 @@ class ConfigPanel extends React.Component {
                     <label className='page__element input-group'>Hopr Node http  url:
                         <input className='input-group__input' type='text'
                             value={this.state.nodeRestURL} onChange={this.setNodeRestURL}
-                            placeholder='http://hoprnode.io/api/v2' />
+                            placeholder='http://hoprnode.io' />
                     </label>
 
                     <label className='page__element input-group'>HOPR authentication code:
@@ -59,7 +59,7 @@ class ConfigPanel extends React.Component {
                     </label>
 
                     <label className='page__element input-group'>WS Endpoint:
-                        <input type='text' className='input-group__input' value={this.state.wsEndpoint} onChange={this.setWsEndpoint} />
+                        <input type='text' placeholder='ws://localhost:19501' className='input-group__input' value={this.state.wsEndpoint} onChange={this.setWsEndpoint} />
                     </label>
 
                     <button className='button button_primary' onClick={this.save}>Save</button>
