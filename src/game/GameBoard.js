@@ -16,6 +16,7 @@ class GameView extends React.Component {
 
         this.state = {
             game: new Game(props.config),
+            otherPlayers: [],
             showRoundOverScreen: false,
             showGameOverScreen: false,
         }
@@ -23,9 +24,14 @@ class GameView extends React.Component {
             this.state.game.onGameOver(props.onGameOver);
 
         this.state.game.onRoundOver(() => this.roundOver(this));
-        this.state.game.startGame();
-
         this.updateGame = this.updateGame.bind(this);
+    }
+
+    componentDidMount() {
+        return this.state.game.startGame()
+        .then(res => {
+            this.updateGame(this.state.game);
+        });
     }
 
     roundOver(this_) {
@@ -61,7 +67,7 @@ class GameView extends React.Component {
                 <div className='game__player-list player-list'>
                     <p class='player-list__title'>Players</p>
                     <p className='game__player player-list__player-details'>You</p>
-                    { game.otherPlayers.map((addr, index) => (
+                    { game.multiplayer.otherPlayers.map((addr, index) => (
                         <p className='game__player player' key={"player" + index}>
                             <span className="player-list__address">{addr.substring(0, 12) + "..." + addr.substring(addr.length-6)}</span>
                             { this.state.game.multiplayer.getScore(addr) != null &&
@@ -79,7 +85,7 @@ class GameView extends React.Component {
                     game = {this.state.game}
                 />
 
-                <p>Score: {game.gameScore}</p>
+                <p>Score: {game.score}</p>
                 <p>Round: {game.round}</p>
 
                 <Hangman className='game__hangman' game={game} onGameUpdate={this.updateGame} />

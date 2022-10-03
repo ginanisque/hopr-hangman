@@ -5,27 +5,23 @@ import config from "../config/config.js";
 
 class Multiplayer {
     constructor(otherPlayers, gameCreator) {
-        if(gameCreator && typeof gameCreator == 'string' && gameCreator.length > 0)
-            this.gameCreator = gameCreator;
-
-        else this.gameCreator = null;
-
         this.websocket = null;
         this.address = null;
         this.playerData = {};
-
         this._rounds = {}
 
-        if(!otherPlayers || !Array.isArray(otherPlayers) || otherPlayers.length ==0) {
-            console.log("boom. is creator on creation");
-            this._otherPlayers = [];
+        if(gameCreator && typeof gameCreator == 'string' && gameCreator.length > 0) {
+            this.gameCreator = gameCreator;
             this.isGameCreator = false;
+            this._otherPlayers = [];
         } else {
-            this._otherPlayers = otherPlayers;
-
+            this.gameCreator = null;
+            this.setPlayers(otherPlayers);
+            /*
             otherPlayers.forEach(p => {
                 this.playerData[p] = {};
             });
+            */
 
             this.isGameCreator = true;
         }
@@ -52,13 +48,22 @@ class Multiplayer {
     }
 
     setPlayers(playerArray) {
+        this._otherPlayers = [];
         this.playerData = {};
+        this._otherPlayers = [];
 
         playerArray.forEach(p => {
             this.playerData[p] = {
                 score: 0
             };
+
+            // add player to otherPlayers array if they are not user
+            if(p != this.address)
+                this._otherPlayers.push(p);
+
         });
+
+        this.update();
     }
 
     /**
@@ -147,6 +152,7 @@ class Multiplayer {
     }
 
     parseMessage(wsMsg) {
+        console.log("wsmessage:", wsMsg, typeof wsMsg);
         let data;
         try {
             data = JSON.parse(wsMsg);
@@ -154,16 +160,24 @@ class Multiplayer {
             data = {};
         }
 
-        console.log("am i game creator?", this.isGameCreator);
+        if(typeof data == 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch(e) {
+                console.log("cannot parse data anymore:", data);
+            }
+        }
+
+        console.log("data received:", data, typeof data);
+
         if(data.app == 'hangman') {
+            console.log("hangman data received. \nData type:", data.type);
             if(data.type == 'roundData')
                 return this.receiveRoundScores(data);
 
             else if(data.type == 'startGame') {
                 if(!this.isGameCreator) {
-                    console.log('\n\nis not creator, so will init with: ', data);
                     const players = [ ...data.players, this.address ];
-                    console.log("setting players", players);
                     this.setPlayers(players);
                 }
             }
@@ -181,10 +195,12 @@ class Multiplayer {
         this._rounds[peerId][round.num] = round;
         this._rounds[peerId].currentRound = round;
         this._rounds[peerId].gameScore = round.gameScore;
+        this.playerData.score = round.gameScore;
         console.log("round saved", round);
     }
 
     receiveRoundScores(round) {
+        console.log("REceiving round score:", round);
         this.saveRound(round);
         let promiseChain = Promise.resolve(true);
 
@@ -240,6 +256,17 @@ class Multiplayer {
         else return true;
     }
 
+    update() {
+        if(this.updateHook)
+            return this.updateHook();
+        else return Promise.resolve(true);
+    }
+
+    onUpdate(cb) {
+        if(cb)
+            this.updateHook = cb;
+    }
+
     broadcastMessage(data) {
         if(!data.peerId)
             data.peerId = this.address;
@@ -247,11 +274,9 @@ class Multiplayer {
         const otherPlayers = [...this.otherPlayers];
         const gameCreator = this.gameCreator;
 
-        if(gameCreator != this.address)
-            otherPlayers.push(gameCreator);
-
         let promiseChain = Promise.resolve();
         if(otherPlayers && otherPlayers.length > 0) {
+            console.log('broadcasting message to other players:', otherPlayers);
             otherPlayers.forEach(peerID => {
                 if(peerID != data.peerId) {
                     promiseChain = promiseChain.then(() =>
@@ -304,8 +329,11 @@ class Multiplayer {
     }
 
     get otherPlayers() {
+        console.log("\GET otherPlayers\n**************************");
+        console.log("player data:", this.playerData);
         return Object.keys(this.playerData).filter(peerId => {
-            return peerId != this.address
+            return peerId != null
+                && peerId != this.address
                 && peerId.trim() != "";
         });
     }
@@ -323,6 +351,7 @@ class Multiplayer {
     }
 
     getScore(peerId) {
+        console.log("rounds for all players:", this._rounds);
         if(this._rounds[peerId])
             return this._rounds[peerId].gameScore || 0;
     }
