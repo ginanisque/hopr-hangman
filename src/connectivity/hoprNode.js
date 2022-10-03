@@ -56,7 +56,7 @@ function callAPI(path, body) {
 
 export function getAddress() {
     if(hoprNodeHttpUrl()) {
-        return callAPI('account/address')
+        return callAPI('account/addresses')
             .then(res => {
                 return res.hoprAddress;
             });
@@ -80,16 +80,19 @@ export function establishChannel(hoprAddr, amount='1000000000000000000') {
         });
 }
 
-export function getChannels(hoprAddr) {
-    if(hoprAddr && /^16Uiu/.test(hoprAddr)) {
-        return callAPI('channels/' + hoprAddr)
-            .then(res => {
-                // console.log("channesl:", res);
-                return res;
-            });
-    } else {
-        return callAPI('channels')
-    }
+export function getChannel(hoprAddr, direction='incoming') {
+    if(!hoprAddr || !/^16Uiu/.test(hoprAddr))
+        return Promise.reject(new Error("Please supply peer id"));
+
+    return callAPI('channels/' + hoprAddr + '/' + direction)
+        .then(res => {
+            // console.log("channesl:", res);
+            return res;
+        });
+}
+
+export function getChannels(direction='outgoing') {
+    return callAPI('channels')
 }
 
 export function sendHoprMessage(hoprAddr, message, path) {

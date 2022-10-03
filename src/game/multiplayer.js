@@ -17,6 +17,7 @@ class Multiplayer {
         this._rounds = {}
 
         if(!otherPlayers || !Array.isArray(otherPlayers) || otherPlayers.length ==0) {
+            console.log("boom. is creator on creation");
             this._otherPlayers = [];
             this.isGameCreator = false;
         } else {
@@ -153,18 +154,18 @@ class Multiplayer {
             data = {};
         }
 
+        console.log("am i game creator?", this.isGameCreator);
         if(data.app == 'hangman') {
             if(data.type == 'roundData')
                 return this.receiveRoundScores(data);
 
             else if(data.type == 'startGame') {
                 if(!this.isGameCreator) {
-                    console.log('is not creator, so will init with: ', data);
+                    console.log('\n\nis not creator, so will init with: ', data);
                     const players = [ ...data.players, this.address ];
                     console.log("setting players", players);
                     this.setPlayers(players);
                 }
-
             }
         }
 

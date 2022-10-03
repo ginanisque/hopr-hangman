@@ -264,7 +264,7 @@ describe("Multiplayer", function() {
                     .then(() => sinon.assert.notCalled(spy1))
             });
 
-            it('If message is startGame, call savePlayerData', function() {
+            it.only('If message is startGame, call savePlayerData', function() {
                 const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
                 const gameCreator = ownAddress;
 
@@ -279,9 +279,8 @@ describe("Multiplayer", function() {
                     ...otherPlayers, gameCreator
                 ]
 
-
                 const multiplayer1 = new Multiplayer(undefined, gameCreator);
-                sinon.stub(multiplayer1, 'getAddress').resolves(gameCreator);
+                sinon.stub(multiplayer1, 'getAddress').resolves(otherPlayers[2]);
 
                 const multiplayer2 = new Multiplayer([], gameCreator);
                 sinon.stub(multiplayer2, 'getAddress').resolves(otherPlayers[1]);
@@ -310,7 +309,6 @@ describe("Multiplayer", function() {
                         spy2.resetHistory();
                         spy3.resetHistory();
 
-                        console.log("spies reset");
                         return multiplayer1.parseMessage(wsMsg)
                             .then(() => multiplayer2.parseMessage(wsMsg))
                             .then(() => multiplayer3.parseMessage(wsMsg))
