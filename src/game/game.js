@@ -13,6 +13,7 @@ class Game {
     _score = 0;
     rounds = [];
     isGameCreator=false;
+    _gameOver=false;
 
     constructor(otherConfig={}) {
         this.config = otherConfig;
@@ -44,17 +45,19 @@ class Game {
     }
 
     initRound() {
-        this.word = null;
-        this.answer = randomWord(this.wordlist);
-
-        while(this.repeatedWord == true) {
+        if(!this._gameOver) {
+            this.word = null;
             this.answer = randomWord(this.wordlist);
-        }
 
-        this._currentRound++;
-        this.wrongGuesses = [];
-        this.correctGuesses = [];
-        this.incorrectGuesses = 0;
+            while(this.repeatedWord == true) {
+                this.answer = randomWord(this.wordlist);
+            }
+
+            this._currentRound++;
+            this.wrongGuesses = [];
+            this.correctGuesses = [];
+            this.incorrectGuesses = 0;
+        }
     }
 
     get round() {
@@ -73,16 +76,18 @@ class Game {
     }
 
     newRound(roundScore=0) {
-        const roundData = this.roundData;
-        this.rounds.push({...roundData, roundScore});
+        if(!this._gameOver) {
+            const roundData = this.roundData;
+            this.rounds.push({...roundData, roundScore});
 
-        if(this._currentRound > 0) {
-            this.roundOver(roundData);
+            if(this._currentRound > 0) {
+                this.roundOver(roundData);
+            }
+
+            if(this._currentRound < 5)
+                this.initRound();
+            else this.gameOver();
         }
-
-        if(this._currentRound < 5)
-            this.initRound();
-        else this.gameOver();
     }
 
     sendRoundData(roundData) {
@@ -118,7 +123,7 @@ class Game {
 
         let _word = '';
 
-        for(let i = 0; i < this._answer.length; i++) {
+        for(let i = 0; i < this.answer.length; i++) {
             _word += '_';
         }
 
@@ -152,40 +157,42 @@ class Game {
     }
 
     guessLetter(letter) {
-        const answer = this.answer;
-        let isCorrect = false;
+        if(!this._gameOver) {
+            const answer = this.answer;
+            let isCorrect = false;
 
-        let word = "";
+            let word = "";
 
-        for(let i=0; i<this.answer.length; i++) {
-            const currentLetter = this.word[i];
+            for(let i=0; i<this.answer.length; i++) {
+                const currentLetter = this.word[i];
 
-            // ie, if letter has already been guessed
-            if(currentLetter && currentLetter != '_') {
-                word += currentLetter
-                // isCorrect = null;
-                // break;
-            }
-            else {
-                if(letter == answer[i]) {
-                    word += letter;
-                    isCorrect = true;
-                } else {
-                    // isCorrect =  false;
-                    word += '_';
+                // ie, if letter has already been guessed
+                if(currentLetter && currentLetter != '_') {
+                    word += currentLetter
+                    // isCorrect = null;
+                    // break;
+                }
+                else {
+                    if(letter == answer[i]) {
+                        word += letter;
+                        isCorrect = true;
+                    } else {
+                        // isCorrect =  false;
+                        word += '_';
+                    }
                 }
             }
-        }
 
-        this.word = word;
-        if(isCorrect === true)
-            this.correctGuesses.push(letter);
-        if(isCorrect === false) {
-            this.wrongGuesses.push(letter);
-            this.incorrectGuesses++
-        }
+            this.word = word;
+            if(isCorrect === true)
+                this.correctGuesses.push(letter);
+            if(isCorrect === false) {
+                this.wrongGuesses.push(letter);
+                this.incorrectGuesses++
+            }
 
-        return isCorrect;
+            return isCorrect;
+        } else return null;
     }
 
     onGameOver(cb) {
@@ -193,6 +200,8 @@ class Game {
     }
 
     gameOver() {
+        this._gameOver = true;
+
         return Promise.resolve(true)
             .then(() => this.multiplayer.sendGameOver({gameScore: this.gameScore, score: this.gameScore}))
             .then(() =>this.gameOverAction());

@@ -6,3 +6,15 @@
     font-size: 2rem;
     font-weight: bold;
 }
+.word-history__guess {
+    margin-left: 0.1em;
+    margin-right: 0.1em;
+}
+.word-history__guess_bad {
+    border-bottom: 2px solid grey;
+    color: grey;
+}
+.word-history__guess_good {
+    font-weight: bold;
+    color: black;
+}

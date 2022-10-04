@@ -181,6 +181,10 @@ class Multiplayer {
                     this.setPlayers(players);
                 }
             }
+
+            else if(data.type == 'gameOver') {
+                return this.receiveGameOver(data)
+            }
         }
 
         return Promise.resolve(true);
@@ -195,7 +199,7 @@ class Multiplayer {
         this._rounds[peerId][round.num] = round;
         this._rounds[peerId].currentRound = round;
         this._rounds[peerId].gameScore = round.gameScore;
-        this.playerData.score = round.gameScore;
+        this.playerData[peerId].score = round.gameScore;
         console.log("round saved", round);
     }
 
@@ -239,12 +243,13 @@ class Multiplayer {
             peerId: this.address,
         }
 
-        this.gameOver(gameData);
+        this.gameOver(data);
 
         return this.broadcastMessage(data)
     }
 
     gameOver(gameData) {
+        console.log("gamedata:", gameData);
         this.playerData[gameData.peerId] = {
             gameOver: true,
             score: gameData.score || gameData.gameScore,
@@ -268,8 +273,10 @@ class Multiplayer {
     }
 
     broadcastMessage(data) {
-        if(!data.peerId)
+        if(!data.peerId) {
             data.peerId = this.address;
+            this.saveRound(data);
+        }
 
         const otherPlayers = [...this.otherPlayers];
         const gameCreator = this.gameCreator;
@@ -301,11 +308,20 @@ class Multiplayer {
         return ans;
     }
 
+    get winner() {
+        console.log("trying to choose winner");
+        console.log("can i choose winner?", this.canChooseWinner());
+        if(this.canChooseWinner())
+            return this.chooseWinner();
+        else return null;
+    }
+
     canChooseWinner() {
         let ans = true;
 
         this.otherPlayers.forEach(peerId => {
             const playerData = this.playerData[peerId];
+            console.log("choosing winner - player data:", playerData);
 
             if(!playerData || !playerData.gameOver)
                 ans = false;
@@ -315,10 +331,14 @@ class Multiplayer {
     }
 
     chooseWinner() {
-        let winner, highestScore=0;
+        let winner=null, highestScore=0;
 
         for(let peerId in this.playerData) {
-            const gameScore = this.playerData[peerId].gameScore 
+            const gameScore = this.playerData[peerId].score 
+            // Initialise winner
+            if(!winner)
+                winner = peerId;
+
             if(gameScore > highestScore) {
                 highestScore = gameScore;
                 winner = peerId;
@@ -347,7 +367,27 @@ class Multiplayer {
     }
 
     getRounds(peerId) {
-        return this._rounds[peerId];
+        let rounds_={}, data;
+        if(!peerId)
+            data = this._rounds[this.address];
+        else
+            data = this._rounds[peerId];
+
+        if(!data || typeof data != 'object') {
+            console.log("invalid rounds object", data);
+        } else {
+            console.log("all rounds data:", data);
+
+            for(let key in data) {
+                console.log("round", key, ":", data[key]);
+                if(/^\d+/.test(key))
+                    rounds_[key] = data[key];
+            }
+        }
+
+        console.log("rounsd:", rounds_);
+
+        return rounds_
     }
 
     getScore(peerId) {

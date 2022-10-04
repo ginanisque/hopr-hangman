@@ -8,7 +8,6 @@ import WebSocketHandler from '../connectivity/WebSocketHandler.jsx';
 import appConfig from "../config/config.js";
 
 import RoundOverScreen from './RoundOverScreen.js';
-import GameOverScreen from './GameOverScreen.js';
 
 class GameView extends React.Component {
     constructor(props) {
@@ -18,7 +17,6 @@ class GameView extends React.Component {
             game: new Game(props.config),
             otherPlayers: [],
             showRoundOverScreen: false,
-            showGameOverScreen: false,
         }
         if(props.onGameOver)
             this.state.game.onGameOver(props.onGameOver);
@@ -42,10 +40,6 @@ class GameView extends React.Component {
             3000);
     }
 
-    gameOver(this_) {
-        this_.setState({showGameOverScreen: true});
-    }
-
     updateGame(game) {
         this.setState(game);
     }
@@ -60,13 +54,9 @@ class GameView extends React.Component {
                     />
                 }
 
-                { this.state.showGameOverScreen && 
-                    <GameOverScreen game={game}
-                    />
-                }
                 <div className='game__player-list player-list'>
                     <p class='player-list__title'>Players</p>
-                    <p className='game__player player-list__player-details'>You</p>
+                    <p className='game__player player-list__player-details'>You <span className='player__score'>{game.score}</span></p>
                     { game.multiplayer.otherPlayers.map((addr, index) => (
                         <p className='game__player player' key={"player" + index}>
                             <span className="player-list__address">{addr.substring(0, 12) + "..." + addr.substring(addr.length-6)}</span>
@@ -88,9 +78,33 @@ class GameView extends React.Component {
                 <p>Score: {game.score}</p>
                 <p>Round: {game.round}</p>
 
+                {game.multiplayer.winner && <p>Winner: {game.multiplayer.winner}</p>}
+
                 <Hangman className='game__hangman' game={game} onGameUpdate={this.updateGame} />
                 <Word className='game__word' game={game} onGameUpdate={this.updateGame} />
                 <Keyboard className='game__keyboard' game={game} onGameUpdate={this.updateGame} />
+
+                <div className='word-history'>
+                    <h6>Past words</h6>
+                    { Object.values(game.multiplayer.getRounds())
+                        .map(round => {
+                            return (
+                                <>
+                                    <p>Round {round.num}</p>
+                                    <p>{round.guess.split("").map((letter, index) => {
+                                        let className = 'word-history__guess word-history__guess_';
+                                        if(letter == '_')
+                                            className += 'bad';
+                                        else className += 'good'
+
+                                            return <span className={className}>{round.word[index]}</span>;
+                                        })
+                                    }</p>
+                                </>
+                            );
+                        })
+                    }
+                </div>
             </div>
         );
     }
