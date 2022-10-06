@@ -153,11 +153,16 @@ class Multiplayer {
 
     parseMessage(wsMsg) {
         console.log("wsmessage:", wsMsg, typeof wsMsg);
-        let data;
-        try {
-            data = JSON.parse(wsMsg);
-        } catch(e) {
-            data = {};
+        let data = wsMsg;
+
+        if(wsMsg && typeof wsMsg == 'object')
+            data = wsMsg
+        else if(typeof wsMsg == 'string') {
+            try {
+                data = JSON.parse(wsMsg);
+            } catch(e) {
+                data = {};
+            }
         }
 
         if(typeof data == 'string') {

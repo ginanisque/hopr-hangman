@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import useWebsocket from './useWebSocket'
+import { decode } from 'rlp'
 
 export const WebSocketHandler = ({ wsEndpoint, securityToken, game }) => {
   const [message, setMessage] = useState('')
@@ -7,14 +8,21 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game }) => {
   const { socketRef } = websocket
   const handleReceivedMessage = async (ev) => {
     try {
-      // we are only interested in messages, not all the other events coming in on the socket
-      const data = JSON.parse(ev.data)
-      if (data.type === 'message') {
-        setMessage(data.msg)
-        game.multiplayer.parseMessage(data.msg);
+      let wsMsg;
+
+      let uint8Array = new Uint8Array(JSON.parse(`[${ev.data}]`));
+      let decodedArray = decode(uint8Array)
+      if (decodedArray[0] instanceof Uint8Array) {
+        wsMsg = new TextDecoder().decode(decodedArray[0])
       }
+
+      const data = JSON.parse(wsMsg)
+
+      setMessage(data)
+      game.multiplayer.parseMessage(data);
+
     } catch (err) {
-      console.error(err)
+      console.error("Couldn't parse websocket message\n", err)
     }
   }
   useEffect(() => {

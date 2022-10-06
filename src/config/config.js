@@ -9,7 +9,6 @@ class Config {
     reload() {
         this._restURL = this.retrieve('restURL') || "";
         this._authToken = this.retrieve('authToken') || "";
-        this._wsEndpoint = this.retrieve('wsEndpoint') || "";
     }
 
     retrieve(key) {
@@ -23,11 +22,11 @@ class Config {
         window.history.pushState({}, '', url);
     }
 
-    set wsEndpoint(val) {
-        this.save('wsEndpoint', val);
-    }
     get wsEndpoint() {
-        return this.retrieve('wsEndpoint');
+        const url = new URL(this.restURL + '/api/v2/messages/websocket/');
+        url.protocol = url.protocol === "https:" ? "wss" : "ws";
+
+        return url;
     }
 
     set restURL(val) {
