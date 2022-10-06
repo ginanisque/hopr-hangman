@@ -5,6 +5,30 @@ import Multiplayer from '../../../src/game/multiplayer.js';
 describe("Multiplayer", function() {
     it('If otherPlayers == null, do not carry out any actions');
 
+    it.only('Start(): If user is gameCreator, create gameID', function() {
+        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const gameCreator = ownAddress;
+
+        const p4 = process.env.REACT_APP_TEST_PEER_ID4,
+            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+
+        const otherPlayers = [
+            p4, p5
+        ]
+
+        const multiplayer = new Multiplayer(otherPlayers);
+        expect(ownAddress == gameCreator);// Sanity check
+
+        sinon.stub(multiplayer, 'getAddress').resolves(ownAddress);
+
+        const createGame = sinon.stub(multiplayer, 'createGame').resolves(true);
+
+        expect(multiplayer.gameID).to.be.a('string');
+        expect(multiplayer.gameID).to.not.be.empty;
+        expect(multiplayer.gameID).to.not.be.null;
+        expect(multiplayer.gameID).to.not.be.undefined;
+    });
+
     it('Start(): If gameCreator is user, call createGame', function() {
         const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
         const gameCreator = ownAddress;
@@ -161,6 +185,7 @@ describe("Multiplayer", function() {
 
         const spy = sinon.stub(multiplayer, 'establishChannel').resolves(true);
 
+        console.log("multiplayer game id:", multiplayer.gameID);
         return multiplayer.createGame()
             .then(() => {
                 sinon.assert.called(spy);
@@ -168,6 +193,34 @@ describe("Multiplayer", function() {
                 sinon.assert.calledWith(spy, p3)
                 sinon.assert.calledWith(spy, p4)
                 sinon.assert.calledWith(spy, p5)
+            });
+    });
+
+    it.only('CreateGame: should send startGame message with game ID', function() {
+        this.timeout(5000);
+        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
+            p3 = process.env.REACT_APP_TEST_PEER_ID3,
+            p4 = process.env.REACT_APP_TEST_PEER_ID4,
+            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+
+        const otherPlayers = [
+            p2, p3, p4, p5
+        ]
+
+        const multiplayer = new Multiplayer(otherPlayers);
+        const gameID = "jofwjeaf";
+        multiplayer.gameID = gameID;
+
+        sinon.stub(multiplayer, 'establishChannel').resolves(true);
+        const spy = sinon.stub(multiplayer, 'sendHoprMessage').resolves(true);
+
+        return multiplayer.createGame()
+            .then(() => {
+                sinon.assert.called(spy);
+                sinon.assert.calledWith(spy, p2, sinon.match.has('game_id', gameID))
+                sinon.assert.calledWith(spy, p3, sinon.match.has('game_id', gameID))
+                sinon.assert.calledWith(spy, p4, sinon.match.has('game_id', gameID))
+                sinon.assert.calledWith(spy, p5, sinon.match.has('game_id', gameID))
             });
     });
 

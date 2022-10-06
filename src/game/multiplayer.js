@@ -2,6 +2,7 @@ import { getAddress, sendHoprMessage, establishChannel } from '../connectivity/h
 import useWebsocket from '../connectivity/useWebSocket.js';
 import webSocketHandler from '../connectivity/WebSocketHandler.jsx';
 import config from "../config/config.js";
+import { v4 as uuidv4 } from 'uuid';
 
 class Multiplayer {
     constructor(otherPlayers, gameCreator) {
@@ -10,18 +11,18 @@ class Multiplayer {
         this.playerData = {};
         this._rounds = {}
 
+        // Player is NOT game creator because multiplayer has a game creator property
         if(gameCreator && typeof gameCreator == 'string' && gameCreator.length > 0) {
             this.gameCreator = gameCreator;
             this.isGameCreator = false;
             this._otherPlayers = [];
-        } else {
+        } else { // player is game creator
+            // If player is game creator, add other players and set game ID
+            this.gameID = uuidv4(); // used to identify current game.
+            console.log("game id:", this.gameID);
+
             this.gameCreator = null;
             this.setPlayers(otherPlayers);
-            /*
-            otherPlayers.forEach(p => {
-                this.playerData[p] = {};
-            });
-            */
 
             this.isGameCreator = true;
         }
@@ -94,10 +95,8 @@ class Multiplayer {
             return Promise.reject("Only game creator can create game");
 
         const gameData = {
-            app: 'hangman',
             type: 'startGame',
             players: [...this.otherPlayers, this.address],
-
         }
 
         let promiseChain = Promise.resolve(true);
@@ -133,7 +132,7 @@ class Multiplayer {
                                 if(!addr || addr == "")
                                     return resolve(false);
 
-                                return this.sendHoprMessage(addr, gameData)
+                                return this.sendMessage(addr, gameData)
                                     .then(res => {
                                         if(cb) {
                                             return cb()
@@ -149,6 +148,14 @@ class Multiplayer {
         });
 
         return promiseChain;
+    }
+
+    sendMessage(addr, data) {
+        return this.sendHoprMessage(addr, {
+            ...data,
+            app: 'hangman',
+            game_id: this.gameID
+        });
     }
 
     parseMessage(wsMsg) {
@@ -177,18 +184,27 @@ class Multiplayer {
 
         if(data.app == 'hangman') {
             console.log("hangman data received. \nData type:", data.type);
-            if(data.type == 'roundData')
-                return this.receiveRoundScores(data);
 
-            else if(data.type == 'startGame') {
+            if(data.type == 'startGame') {
                 if(!this.isGameCreator) {
                     const players = [ ...data.players, this.address ];
                     this.setPlayers(players);
+                    this.gameID = data.game_id;
                 }
-            }
+            } else {
+                if(data.game_id && this.gameID) {
+                    if(this.gameID != data.game_id) {
+                        console.info("Wrong game id:", data.game_id);
+                        return Promise.resolve(false);
+                    }
 
-            else if(data.type == 'gameOver') {
-                return this.receiveGameOver(data)
+                    if(data.type == 'roundData')
+                        return this.receiveRoundScores(data);
+
+                    else if(data.type == 'gameOver') {
+                        return this.receiveGameOver(data)
+                    }
+                }
             }
         }
 
@@ -292,7 +308,7 @@ class Multiplayer {
             otherPlayers.forEach(peerID => {
                 if(peerID != data.peerId) {
                     promiseChain = promiseChain.then(() =>
-                        this.sendHoprMessage(peerID, JSON.stringify(data)));
+                        this.sendMessage(peerID, data));
                 }
             });
         }
@@ -354,8 +370,6 @@ class Multiplayer {
     }
 
     get otherPlayers() {
-        console.log("\GET otherPlayers\n**************************");
-        console.log("player data:", this.playerData);
         return Object.keys(this.playerData).filter(peerId => {
             return peerId != null
                 && peerId != this.address
@@ -379,24 +393,20 @@ class Multiplayer {
             data = this._rounds[peerId];
 
         if(!data || typeof data != 'object') {
-            console.log("invalid rounds object", data);
+            console.error("invalid rounds object", data);
         } else {
-            console.log("all rounds data:", data);
+            console.info("all rounds data:", data);
 
             for(let key in data) {
-                console.log("round", key, ":", data[key]);
                 if(/^\d+/.test(key))
                     rounds_[key] = data[key];
             }
         }
 
-        console.log("rounsd:", rounds_);
-
         return rounds_
     }
 
     getScore(peerId) {
-        console.log("rounds for all players:", this._rounds);
         if(this._rounds[peerId])
             return this._rounds[peerId].gameScore || 0;
     }
