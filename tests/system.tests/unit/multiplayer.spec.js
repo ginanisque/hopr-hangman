@@ -1,11 +1,14 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+
+import { faker } from '@faker-js/faker';
+import { fakeHoprAddress } from '../../helpers';
 import Multiplayer from '../../../src/game/multiplayer.js';
 
 describe("Multiplayer", function() {
     it('If otherPlayers == null, do not carry out any actions');
 
-    it.only('Start(): If user is gameCreator, create gameID', function() {
+    it('Start(): If user is gameCreator, create gameID', function() {
         const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
         const gameCreator = ownAddress;
 
@@ -56,7 +59,33 @@ describe("Multiplayer", function() {
             })
     });
 
-    it.skip('#canIgnore - Start(): If gameCreator is user, send addresses of all players to all users', function() {
+    it('Start(): After starting game, set playerData for self', function() {
+        const p1 = process.env.REACT_APP_TEST_PEER_ID1;
+
+        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
+            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+
+        const otherPlayers = [
+            p2, p3
+        ]
+
+        const m1 = new Multiplayer(otherPlayers); // Game creator
+        sinon.stub(m1, 'getAddress').resolves(p1);
+        sinon.stub(m1, 'establishChannel').resolves(true);
+        sinon.stub(m1, 'sendHoprMessage').resolves(true);
+
+        const m2 = new Multiplayer([], p1); // Is joining game
+        sinon.stub(m2, 'getAddress').resolves(p2);
+        sinon.stub(m2, 'establishChannel').resolves(true);
+        sinon.stub(m2, 'sendHoprMessage').resolves(true);
+
+        return m1.start()
+            .then(() => {
+                expect(m1.playerData).to.have.property(p1);
+            })
+    });
+
+    it('Start(): If gameCreator is user, send addresses of all players to all users', function() {
         this.timeout(5000);
         const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
         const gameCreator = ownAddress;
@@ -69,12 +98,6 @@ describe("Multiplayer", function() {
             p3, p4, p5
         ]
 
-        const gameData = {
-            app: 'hangman',
-            type: 'startGame',
-            players: [gameCreator, ...otherPlayers]
-        }
-
         const multiplayer = new Multiplayer(otherPlayers);
 
         const spy = sinon.stub(multiplayer, 'sendHoprMessage').resolves(true);
@@ -85,16 +108,16 @@ describe("Multiplayer", function() {
 
         return expect(multiplayer.start()).to.be.fulfilled
             .then(() => {
-                console.log("gamedata:", gameData);
-
                 otherPlayers.forEach(peerId => {
                     expect(peerId).to.be.a('string');
-                    sinon.assert.calledWith(spy, peerId, sinon.match.has('players', gameData.players));
+                    // sinon.assert.calledWith(spy, peerId, sinon.match.has('players'));
+                    sinon.assert.calledWith(spy, peerId, sinon.match.has('players',
+                        sinon.match.array.deepEquals([...otherPlayers, gameCreator])));
                 })
             })
     });
 
-    it('AllowNewRound should return false if any players are more than one round behind', function() {
+    it.skip('AllowNewRound should return false if any players are more than one round behind', function() {
         const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
         const gameCreator = ownAddress;
 
@@ -116,7 +139,7 @@ describe("Multiplayer", function() {
         expect(multiplayer.allowNewRound).to.be.false;
     });
 
-    it('AllowNewRound should return true if all players are at same round', function() {
+    it.skip('AllowNewRound should return true if all players are at same round', function() {
         const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
         const gameCreator = ownAddress;
 
@@ -162,16 +185,8 @@ describe("Multiplayer", function() {
             })
     });
 
-    it('CreateGame: fail if otherPlayers is empty', function() {
-        const multiplayer = new Multiplayer([]);
-
-        const spy = sinon.stub(multiplayer, 'establishChannel').resolves(true);
-
-        return expect(multiplayer.createGame()).to.be.rejected;
-    });
-
     it('CreateGame: should establishChannel() to all other players', function() {
-        this.timeout(5000);
+        this.timeout(9000);
         const p2 = process.env.REACT_APP_TEST_PEER_ID2,
             p3 = process.env.REACT_APP_TEST_PEER_ID3,
             p4 = process.env.REACT_APP_TEST_PEER_ID4,
@@ -184,8 +199,8 @@ describe("Multiplayer", function() {
         const multiplayer = new Multiplayer(otherPlayers);
 
         const spy = sinon.stub(multiplayer, 'establishChannel').resolves(true);
+        sinon.stub(multiplayer, 'sendHoprMessage').resolves(true);
 
-        console.log("multiplayer game id:", multiplayer.gameID);
         return multiplayer.createGame()
             .then(() => {
                 sinon.assert.called(spy);
@@ -196,7 +211,7 @@ describe("Multiplayer", function() {
             });
     });
 
-    it.only('CreateGame: should send startGame message with game ID', function() {
+    it('CreateGame: should send startGame message with game ID', function() {
         this.timeout(5000);
         const p2 = process.env.REACT_APP_TEST_PEER_ID2,
             p3 = process.env.REACT_APP_TEST_PEER_ID3,
@@ -226,25 +241,25 @@ describe("Multiplayer", function() {
 
     it('CreateGame: if establishChannel() throws because channel is open, continue', function() {
         this.timeout(5000);
+
         const p2 = process.env.REACT_APP_TEST_PEER_ID2,
             p3 = process.env.REACT_APP_TEST_PEER_ID3,
             p4 = process.env.REACT_APP_TEST_PEER_ID4,
             p5 = process.env.REACT_APP_TEST_PEER_ID5;
 
-        const otherPlayers = [
-            p2, p3, p4, p5
-        ]
+        const otherPlayers = [p2, p3, p4, p5];
 
-        const multiplayer = new Multiplayer(otherPlayers);
+        const m1 = new Multiplayer(otherPlayers);
 
-        const spy = sinon.stub(multiplayer, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
+        sinon.stub(m1, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
+        sinon.stub(m1, 'sendHoprMessage').resolves(true);
 
-        return expect(multiplayer.createGame()).to.be.fulfilled;
+        return expect(m1.createGame()).to.be.fulfilled;
     });
 
     it('ConnectGame: if establishChannel() throws because channel is open, continue', function() {
         const creator = process.env.REACT_APP_TEST_PEER_ID3;
-        const multiplayer = new Multiplayer(creator);
+        const multiplayer = new Multiplayer(null, creator);
 
         const spy = sinon.stub(multiplayer, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
 
@@ -256,7 +271,7 @@ describe("Multiplayer", function() {
 
     it('ConnectGame: Call establish channel to game creator', function() {
         const gameCreator = process.env.REACT_APP_TEST_PEER_ID3;
-        const multiplayer = new Multiplayer([]);
+        const multiplayer = new Multiplayer([], gameCreator);
 
         const spy = sinon.stub(multiplayer, 'establishChannel').resolves(true);
 
@@ -286,139 +301,66 @@ describe("Multiplayer", function() {
         expect(multiplayer.getScore(player2)).to.equal(17);
     });
 
-    describe("Parse message:", function() {
-        describe("If message is a json obj", function() {
-            it('If message is startGame but player is gameCreator, do not call setPlayers', function() {
-                const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
-                const gameCreator = ownAddress;
+    it('CanChooseWinner should be false if any player does not have gameOver=true',function() {
+        const gameCreator = fakeHoprAddress(),
+            otherPlayers = faker.datatype.array().map(() => fakeHoprAddress());
 
-                const otherPlayers = [
-                    process.env.REACT_APP_TEST_PEER_ID2,
-                    process.env.REACT_APP_TEST_PEER_ID3,
-                    process.env.REACT_APP_TEST_PEER_ID4,
-                    process.env.REACT_APP_TEST_PEER_ID5,
-                ]
+        const m1 = new Multiplayer(otherPlayers);
+        const m2 = new Multiplayer([], gameCreator);
+        const m3 = new Multiplayer(null, gameCreator);
 
-                const players = [
-                    ...otherPlayers, gameCreator
-                ]
+        [{mm:m1, a:gameCreator}, {mm:m2,a:otherPlayers[0]}, {mm:m3, a:otherPlayers[1]}].forEach(({mm, a}) => {
+            sinon.stub(mm, 'sendHoprMessage').resolves(true);
+            sinon.stub(mm, 'establishChannel').resolves(true);
+            sinon.stub(mm, 'getAddress').resolves(a);
+        });
 
+        const randRoundData = {score: faker.random.numeric()}
 
-                const multiplayer1 = new Multiplayer(players);
-                sinon.stub(multiplayer1, 'getAddress').resolves(gameCreator);
+        return [m1, m2,m3].forEach(mm => {
+            const playerData = mm.playerData[mm];
+            mm.playerData = {
+                [gameCreator]: {score: 7, gameOver: true},
+            }
 
-                const roundData = {app: 'hangman', type: 'startGame', players};
-
-                const wsMsg = JSON.stringify(roundData);
-
-                const spy1 = sinon.stub(multiplayer1, 'setPlayers');
-
-                return multiplayer1.parseMessage(wsMsg)
-                    .then(() => sinon.assert.notCalled(spy1))
+            otherPlayers.forEach(peerId => {
+                mm.playerData[peerId] = {score: faker.random.numeric(), gameOver: true};
             });
 
-            it.only('If message is startGame, call savePlayerData', function() {
-                const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
-                const gameCreator = ownAddress;
+            mm.playerData[otherPlayers[5]] = {score: faker.random.numeric()};
 
-                const otherPlayers = [
-                    process.env.REACT_APP_TEST_PEER_ID2,
-                    process.env.REACT_APP_TEST_PEER_ID3,
-                    process.env.REACT_APP_TEST_PEER_ID4,
-                    process.env.REACT_APP_TEST_PEER_ID5,
-                ]
-
-                const players = [
-                    ...otherPlayers, gameCreator
-                ]
-
-                const multiplayer1 = new Multiplayer(undefined, gameCreator);
-                sinon.stub(multiplayer1, 'getAddress').resolves(otherPlayers[2]);
-
-                const multiplayer2 = new Multiplayer([], gameCreator);
-                sinon.stub(multiplayer2, 'getAddress').resolves(otherPlayers[1]);
-
-                const multiplayer3 = new Multiplayer(null, gameCreator);
-                sinon.stub(multiplayer3, 'getAddress').resolves(otherPlayers[3]);
-
-                const roundData = {app: 'hangman', type: 'startGame', players};
-
-                const wsMsg = JSON.stringify(roundData);
-
-                const spy1 = sinon.stub(multiplayer1, 'setPlayers');
-                const spy2 = sinon.stub(multiplayer2, 'setPlayers');
-                const spy3 = sinon.stub(multiplayer3, 'setPlayers');
-
-                // Start multiplayer games
-                return multiplayer1.start()
-                    .then(multiplayer2.start())
-                    .then(multiplayer3.start())
-
-
-                // Parse multiplayer messages
-                    .then(() => {
-                        // Reset spies in case there were any calls in .start()
-                        spy1.resetHistory();
-                        spy2.resetHistory();
-                        spy3.resetHistory();
-
-                        return multiplayer1.parseMessage(wsMsg)
-                            .then(() => multiplayer2.parseMessage(wsMsg))
-                            .then(() => multiplayer3.parseMessage(wsMsg))
-                    })
-                    .then(() => {
-                        sinon.assert.calledWith(spy1, players);
-                        sinon.assert.calledWith(spy2, players);
-                        sinon.assert.calledWith(spy3, players);
-                    });
-            });
-
-            it('If message is roundData, call saveRound', function() {
-                const multiplayer = new Multiplayer([process.env.REACT_APP_TEST_PEER_ID3]);
-                const player2 = process.env.REACT_APP_TEST_PEER_ID3;
-
-                const roundData = {num:3, guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7, type: 'roundData', peerId: player2};
-                const wsMsg = JSON.stringify(roundData);
-
-                const spy = sinon.stub(multiplayer, 'saveRound');
-
-                return multiplayer.parseMessage(wsMsg)
-                .then(() => {
-                    sinon.assert.calledWith(spy, roundData);
-                });
-            });
-
-            it("If message has no property type: 'roundData'", function() {
-                const multiplayer = new Multiplayer([process.env.REACT_APP_TEST_PEER_ID3]);
-
-                const roundData = {guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7};
-                const wsMsg = JSON.stringify(roundData);
-
-                const spy = sinon.stub(multiplayer, 'receiveRoundScores').resolves(true);
-
-                return multiplayer.parseMessage(wsMsg)
-                .then(() => {
-                    sinon.assert.notCalled(spy);
-                });
-            });
-
-            it("If message has property 'type': roundData", function() {
-                const multiplayer = new Multiplayer([process.env.REACT_APP_TEST_PEER_ID3]);
-
-                const roundData = {guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7, type: 'roundData'};
-                const wsMsg = JSON.stringify(roundData);
-
-                const spy = sinon.stub(multiplayer, 'receiveRoundScores').resolves(true);
-
-                return multiplayer.parseMessage(wsMsg)
-                .then(() => {
-                    sinon.assert.calledWith(spy, roundData);
-                });
-            });
+            expect(mm.canChooseWinner).to.be.false;
         });
     });
 
-    it('AllowNewRound: return true if all players are at same round', function() {
+    it('CanChooseWinner should be true if all players have gameOver=true',function() {
+        const gameCreator = fakeHoprAddress(),
+            otherPlayers = faker.datatype.array().map(() => fakeHoprAddress());
+
+        const m1 = new Multiplayer(otherPlayers);
+        const m2 = new Multiplayer([], gameCreator);
+        const m3 = new Multiplayer(null, gameCreator);
+
+        [{mm:m1, a:gameCreator}, {mm:m2,a:otherPlayers[0]}, {mm:m3, a:otherPlayers[1]}].forEach(({mm, a}) => {
+            sinon.stub(mm, 'sendHoprMessage').resolves(true);
+            sinon.stub(mm, 'establishChannel').resolves(true);
+            sinon.stub(mm, 'getAddress').resolves(a);
+        });
+
+        const randRoundData = {score: faker.random.numeric()}
+
+        return [m1, m2,m3].forEach(mm => {
+            const playerData = mm.playerData[mm];
+            mm.playerData = {
+                [gameCreator]: {score: 7, gameOver: true},
+            }
+
+            otherPlayers.forEach(peerId => {
+                mm.playerData[peerId] = {score: faker.random.numeric(), gameOver: true};
+            });
+
+            expect(mm.canChooseWinner).to.be.true;
+        });
     });
 
     it('chooseWinner if all players have sent gameOver, call chooseWinner', async function() {
@@ -450,21 +392,22 @@ describe("Multiplayer", function() {
 
     it('ChooseWinner: set winner as player with highest score', function() {
         this.timeout(6000);
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
-        const gameCreator = ownAddress;
 
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
+        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
+            p2 = process.env.REACT_APP_TEST_PEER_ID2,
             p3 = process.env.REACT_APP_TEST_PEER_ID3,
             p4 = process.env.REACT_APP_TEST_PEER_ID4;
+
+        const gameCreator = p1;
 
         const m1 = new Multiplayer([p2, p3, p4]);
         const m2 = new Multiplayer([], gameCreator);
         const m3 = new Multiplayer(null, gameCreator);
 
-        [m1, m2,m3].forEach(mm => {
+        [{mm:m1, a:p1}, {mm:m2,a:p2}, {mm:m3, a:p3}].forEach(({mm, a}) => {
             sinon.stub(mm, 'sendHoprMessage').resolves(true);
             sinon.stub(mm, 'establishChannel').resolves(true);
-            sinon.stub(mm, 'getAddress').resolves(ownAddress);
+            sinon.stub(mm, 'getAddress').resolves(a);
         });
 
         const randRoundData = {gameScore: 3}
@@ -474,20 +417,22 @@ describe("Multiplayer", function() {
             .then(() => m3.start())
             .then(() => {
                 [m1, m2,m3].forEach(mm => {
-                    mm.sendGameOver({...randRoundData, peerId: gameCreator, score: 7})
-                    mm.sendGameOver({...randRoundData, peerId: p2, score: 12})
-                    mm.sendGameOver({...randRoundData, peerId: p3, score: 14})
-                    mm.sendGameOver({...randRoundData, peerId: p4, score: 4})
+                    const playerData = mm.playerData[mm];
+                    mm.playerData = {
+                        [gameCreator]: {score: 7, gameOver: true},
+                        [p2]: {score: 12, gameOver:true},
+                        [p3]: {score: 14, gameOver: true},
+                        [p4]: {score: 4, gameOver: true},
+                    };
 
                     expect(mm.chooseWinner()).to.equal(p3);
                 });
             });
     });
 
-    // TODO: Fix non-creator player not sending round data after round
-
     it('ReceiveRoundScores: If player is game creator, send round scores to all other players', function() {
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
+        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
+            p2 = process.env.REACT_APP_TEST_PEER_ID2,
             p3 = process.env.REACT_APP_TEST_PEER_ID3,
             p4 = process.env.REACT_APP_TEST_PEER_ID4,
             p5 = process.env.REACT_APP_TEST_PEER_ID5;
@@ -496,12 +441,14 @@ describe("Multiplayer", function() {
             p2, p3, p4, p5
         ]
 
-        const roundData = {
-            fee: "fjoiw",
-            score: 3
-        }
+        const roundData = {score:13, peerId: p3}
 
         const multiplayer = new Multiplayer(otherPlayers);
+
+        multiplayer.playerData = {
+            [p1]: {},
+            [p2]: {}, [p3]: {}, [p4]: {}, [p5]: {},
+        }
 
         sinon.stub(multiplayer, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
         const spy = sinon.stub(multiplayer, 'sendRoundScores').resolves(true);
@@ -516,19 +463,102 @@ describe("Multiplayer", function() {
     });
 
     it('ReceiveRoundScores: If player is not game creator, do not send round scores', function() {
+        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
+            p2 = process.env.REACT_APP_TEST_PEER_ID2,
+            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+
+        const roundData = {score: 3, peerId: p3}
+
+        const m2 = new Multiplayer([], p1);
+        const m3 = new Multiplayer(null, p1);
+
+        m2.address = p2;
+        m3.address = p3;
+
+        const spies = [];
+
+        [m2, m3].forEach(mm => {
+            mm.playerData = {
+                [p1]: {},
+                [p2]: {}, [p3]: {},
+            }
+
+            sinon.stub(mm, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
+            spies.push(sinon.stub(mm, 'sendRoundScores').resolves(true));
+        })
+
+        return m2.receiveRoundScores(roundData)
+            .then(() => m3.receiveRoundScores(roundData))
+            .then(() => {
+                spies.forEach(spy => sinon.assert.notCalled(spy));
+            });
+    });
+
+    it('SendGameOver: Should set gameover to true for player', function() {
+        this.timeout(5000);
+        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
+            p2 = process.env.REACT_APP_TEST_PEER_ID2,
+            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+
+        const otherPlayers = [p2, p3]
+
+        const roundData = {score: 3}
+
+        const m1 = new Multiplayer(otherPlayers);
+        const m2 = new Multiplayer(null, p1);
+
+        sinon.stub(m1, 'establishChannel').resolves(true);
+        sinon.stub(m1, 'sendHoprMessage').resolves(true);
+        sinon.stub(m1, 'getAddress').resolves(p1);
+
+        sinon.stub(m2, 'establishChannel').resolves(true);
+        sinon.stub(m2, 'sendHoprMessage').resolves(true);
+        sinon.stub(m2, 'getAddress').resolves(p2);
+
+        return m1.start()
+            .then(() => m1.sendGameOver(roundData))
+            .then(() => {
+                expect(m1.playerData[p1], 'Game creator').to.have.property('gameOver', true);
+            })
+
+            .then(() => m2.start())
+            .then(() => m2.sendGameOver(roundData))
+            .then(() => {
+                expect(m2.playerData[p2], 'Player 2').to.have.property('gameOver', true);
+            });
+    });
+
+    it('ReceiveGameOver: Should set gameover to true for player', function() {
+        this.timeout(5000);
+        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
+            p2 = process.env.REACT_APP_TEST_PEER_ID2,
+            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+
+        const otherPlayers = [p2, p3]
+
         const roundData = {
-            fee: "fjoiw",
-            score: 3
+            score: 3,
+            peerId: p3,
+            type: 'gameOver'
         }
 
-        const multiplayer = new Multiplayer([]);
+        const m1 = new Multiplayer(otherPlayers);
+        const m2 = new Multiplayer(null, p1);
 
-        sinon.stub(multiplayer, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
-        const spy = sinon.stub(multiplayer, 'sendRoundScores').resolves(true);
+        sinon.stub(m1, 'establishChannel').resolves(true);
+        sinon.stub(m1, 'sendHoprMessage').resolves(true);
+        sinon.stub(m1, 'getAddress').resolves(p1);
 
-        return multiplayer.receiveRoundScores(roundData)
-            .then(() => {
-                sinon.assert.notCalled(spy);
-            });
+        sinon.stub(m2, 'establishChannel').resolves(true);
+        sinon.stub(m2, 'sendHoprMessage').resolves(true);
+        sinon.stub(m2, 'getAddress').resolves(p2);
+
+        return m1.start()
+            .then(() => m1.receiveGameOver(roundData))
+            .then(() => expect(m1.playerData[p3], 'Game creator').to.have.property('gameOver', true))
+
+            .then(() => m2.start())
+            .then(() => m2.receiveGameOver(roundData))
+            .then(() => expect(m2.playerData[p3], 'Player 2').to.have.property('gameOver', true));
     });
 });

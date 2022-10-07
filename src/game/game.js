@@ -203,7 +203,7 @@ class Game {
         this._gameOver = true;
 
         return Promise.resolve(true)
-            .then(() => this.multiplayer.sendGameOver({gameScore: this.gameScore, score: this.gameScore}))
+            .then(() => this.multiplayer.sendGameOver({score: this.score}))
             .then(() =>this.gameOverAction());
     }
 

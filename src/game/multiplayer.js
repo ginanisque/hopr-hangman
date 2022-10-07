@@ -19,7 +19,6 @@ class Multiplayer {
         } else { // player is game creator
             // If player is game creator, add other players and set game ID
             this.gameID = uuidv4(); // used to identify current game.
-            console.log("game id:", this.gameID);
 
             this.gameCreator = null;
             this.setPlayers(otherPlayers);
@@ -79,7 +78,6 @@ class Multiplayer {
                     if(e == "CHANNEL_ALREADY_OPEN")
                         return true;
                     else  {
-                        console.log("__________________________ERROR__________________________:", e);
                         console.error(e);
                         throw e;
                     }
@@ -159,7 +157,7 @@ class Multiplayer {
     }
 
     parseMessage(wsMsg) {
-        console.log("wsmessage:", wsMsg, typeof wsMsg);
+        // console.log("wsmessage:", wsMsg, typeof wsMsg);
         let data = wsMsg;
 
         if(wsMsg && typeof wsMsg == 'object')
@@ -180,14 +178,10 @@ class Multiplayer {
             }
         }
 
-        console.log("data received:", data, typeof data);
-
         if(data.app == 'hangman') {
-            console.log("hangman data received. \nData type:", data.type);
-
             if(data.type == 'startGame') {
                 if(!this.isGameCreator) {
-                    const players = [ ...data.players, this.address ];
+                    const players = [...new Set([ ...data.players, this.address ])];
                     this.setPlayers(players);
                     this.gameID = data.game_id;
                 }
@@ -219,13 +213,10 @@ class Multiplayer {
 
         this._rounds[peerId][round.num] = round;
         this._rounds[peerId].currentRound = round;
-        this._rounds[peerId].gameScore = round.gameScore;
         this.playerData[peerId].score = round.gameScore;
-        console.log("round saved", round);
     }
 
     receiveRoundScores(round) {
-        console.log("REceiving round score:", round);
         this.saveRound(round);
         let promiseChain = Promise.resolve(true);
 
@@ -253,7 +244,9 @@ class Multiplayer {
             type: 'gameOver',
         }
 
-        return this.gameOver(gameData);
+        this.gameOver(gameData);
+
+        return Promise.resolve(true);
     }
 
     sendGameOver(gameData) {
@@ -270,14 +263,13 @@ class Multiplayer {
     }
 
     gameOver(gameData) {
-        console.log("gamedata:", gameData);
+        // console.log("gamedata:", gameData);
         this.playerData[gameData.peerId] = {
             gameOver: true,
-            score: gameData.score || gameData.gameScore,
-            gameScore: gameData.score || gameData.gameScore
+            score: gameData.score,
         }
 
-        if(this.canChooseWinner())
+        if(this.canChooseWinner)
             return this.chooseWinner();
         else return true;
     }
@@ -304,7 +296,6 @@ class Multiplayer {
 
         let promiseChain = Promise.resolve();
         if(otherPlayers && otherPlayers.length > 0) {
-            console.log('broadcasting message to other players:', otherPlayers);
             otherPlayers.forEach(peerID => {
                 if(peerID != data.peerId) {
                     promiseChain = promiseChain.then(() =>
@@ -330,20 +321,17 @@ class Multiplayer {
     }
 
     get winner() {
+        console.log("can i choose winner?", this.canChooseWinner);
         console.log("trying to choose winner");
-        console.log("can i choose winner?", this.canChooseWinner());
-        if(this.canChooseWinner())
+        if(this.canChooseWinner)
             return this.chooseWinner();
         else return null;
     }
 
-    canChooseWinner() {
+    get canChooseWinner() {
         let ans = true;
 
-        this.otherPlayers.forEach(peerId => {
-            const playerData = this.playerData[peerId];
-            console.log("choosing winner - player data:", playerData);
-
+        Object.values(this.playerData).forEach(playerData => {
             if(!playerData || !playerData.gameOver)
                 ans = false;
         });
@@ -355,13 +343,13 @@ class Multiplayer {
         let winner=null, highestScore=0;
 
         for(let peerId in this.playerData) {
-            const gameScore = this.playerData[peerId].score 
+            const score = this.playerData[peerId].score 
             // Initialise winner
             if(!winner)
                 winner = peerId;
 
-            if(gameScore > highestScore) {
-                highestScore = gameScore;
+            if(score > highestScore) {
+                highestScore = score;
                 winner = peerId;
             }
         }
@@ -408,16 +396,16 @@ class Multiplayer {
 
     getScore(peerId) {
         if(this._rounds[peerId])
-            return this._rounds[peerId].gameScore || 0;
+            return this.playerData[peerId].score || 0;
     }
 
     getScores() {
         const scores = {};
 
-        for(let key in this._rounds) {
-            const value = this._rounds[key];
+        for(let key in this.playerData) {
+            const value = this.playerData[key];
             
-            scores[key] = value.gameScore;
+            scores[key] = value.score;
         }
 
         return scores;

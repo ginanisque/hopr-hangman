@@ -73,6 +73,7 @@ class GameView extends React.Component {
                     wsEndpoint = {appConfig.wsEndpoint}
                     securityToken = {appConfig.authToken}
                     game = {this.state.game}
+                    updateGame = {this.updateGame}
                 />
 
                 <p>Score: {game.score}</p>

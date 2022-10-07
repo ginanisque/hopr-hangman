@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import useWebsocket from './useWebSocket'
 import { decode } from 'rlp'
 
-export const WebSocketHandler = ({ wsEndpoint, securityToken, game }) => {
+export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }) => {
   const [message, setMessage] = useState('')
   const websocket = useWebsocket({ wsEndpoint, securityToken })
   const { socketRef } = websocket
@@ -20,6 +20,7 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game }) => {
 
       setMessage(data)
       game.multiplayer.parseMessage(data);
+      updateGame(game)
 
     } catch (err) {
       console.error("Couldn't parse websocket message\n", err)

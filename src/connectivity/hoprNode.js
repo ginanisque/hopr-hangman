@@ -116,5 +116,5 @@ export function sendHoprMessage(hoprAddr, message, path) {
                 console.log("send hopr message", res);
                 return res;
             });
-    }
+    } else return Promise.reject("Node url not set. Update config");
 }

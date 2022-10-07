@@ -6,7 +6,7 @@ import sowpodslist from '../../../src/wordlists/sowpods.js';
 
 describe('Game', function() {
     it.skip('Game should not repeat any words', function() {
-        this.timeout(3000);
+        this.timeout(30000);
         const pastAnswers = [];
 
         const game = new Game();
