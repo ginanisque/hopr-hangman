@@ -3,8 +3,17 @@ import sinon from 'sinon';
 import { faker } from '@faker-js/faker';
 import { makeMessage } from '../../helpers';
 import Multiplayer from '../../../src/game/multiplayer.js';
+import { mockFetch } from '../../mocks.js';
 
 describe("Multiplayer - Parse message", function() {
+    before(() => {
+        mockFetch();
+    });
+
+    after(() => {
+        sinon.restore();
+    });
+
     it('If message is startGame but player is gameCreator, do not call setPlayers', function() {
         const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
         const gameCreator = ownAddress;
@@ -88,6 +97,38 @@ describe("Multiplayer - Parse message", function() {
                 sinon.assert.calledWith(spy2, players);
                 sinon.assert.calledWith(spy3, players);
             });
+    });
+
+    it('If message is startGame, save answers in message', function() {
+        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const gameCreator = ownAddress;
+
+        const otherPlayers = [
+            process.env.REACT_APP_TEST_PEER_ID2,
+            process.env.REACT_APP_TEST_PEER_ID3,
+        ]
+
+        const players = [
+            ...otherPlayers, gameCreator
+        ]
+
+        const answers = ['amdfw', 'wjieofa', 'fjowiefa', 'jfwie', 'ejfowaa'];
+
+
+        const m0 = new Multiplayer(players);
+        sinon.stub(m0, 'getAddress').resolves(gameCreator);
+
+        const m1 = new Multiplayer(null, gameCreator);
+        sinon.stub(m1, 'getAddress').resolves(otherPlayers[0]);
+
+        const roundData = {app: 'hangman', type: 'startGame', players, answers};
+
+        const wsMsg = JSON.stringify(roundData);
+
+        return m1.parseMessage(wsMsg)
+            .then(() => expect(m1.answers).to.eql(answers))
+            .then(() => m0.parseMessage(wsMsg))
+            .then(() => expect(m0.answers).to.not.eql(answers))
     });
 
     it('If message is roundData, call saveRound', function() {

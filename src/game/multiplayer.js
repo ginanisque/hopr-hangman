@@ -11,6 +11,8 @@ class Multiplayer {
         this.playerData = {};
         this._rounds = {}
 
+        this.isReady = false;
+
         // Player is NOT game creator because multiplayer has a game creator property
         if(gameCreator && typeof gameCreator == 'string' && gameCreator.length > 0) {
             this.gameCreator = gameCreator;
@@ -82,7 +84,7 @@ class Multiplayer {
                         throw e;
                     }
                     
-                })
+                });
     }
 
     /**
@@ -95,10 +97,12 @@ class Multiplayer {
         const gameData = {
             type: 'startGame',
             players: [...this.otherPlayers, this.address],
+            answers: this.answers
         }
 
         let promiseChain = Promise.resolve(true);
 
+        // Will establish channels and send startGame message containing game information to other players
         this.otherPlayers.forEach(addr => {
             promiseChain = promiseChain
                 .then(() => {
@@ -124,6 +128,8 @@ class Multiplayer {
                     });
                 })
                 .then(() => {
+                    this.isReady = true;
+
                     return new Promise((resolve, reject) => {
                         setTimeout(
                             () => {
@@ -157,7 +163,7 @@ class Multiplayer {
     }
 
     parseMessage(wsMsg) {
-        // console.log("wsmessage:", wsMsg, typeof wsMsg);
+        console.log("wsmessage:", wsMsg, typeof wsMsg);
         let data = wsMsg;
 
         if(wsMsg && typeof wsMsg == 'object')
@@ -182,8 +188,11 @@ class Multiplayer {
             if(data.type == 'startGame') {
                 if(!this.isGameCreator) {
                     const players = [...new Set([ ...data.players, this.address ])];
+                    this.answers = data.answers;
                     this.setPlayers(players);
                     this.gameID = data.game_id;
+
+                    this.isReady = true;
                 }
             } else {
                 if(data.game_id && this.gameID) {
@@ -263,7 +272,6 @@ class Multiplayer {
     }
 
     gameOver(gameData) {
-        // console.log("gamedata:", gameData);
         this.playerData[gameData.peerId] = {
             gameOver: true,
             score: gameData.score,

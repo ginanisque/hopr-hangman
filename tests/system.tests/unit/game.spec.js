@@ -24,10 +24,16 @@ describe('Game', function() {
         }
     });
 
+    it('generateAnswers should generate an array of 5 answers', function() {
+        const game = new Game();
+        game.generateAnswers();
+        expect(game.answers).to.have.lengthOf(5);
+    });
+
     it('game.word should return empty str with length equal to answer', function() {
         const game = new Game();
-        game.answer = 'foobar';
-        expect(game.word).to.lengthOf(6);
+        game.answer = 'foobaroon';
+        expect(game.word).to.lengthOf(9);
     });
 
     it('word should only have underscores', function() {
@@ -249,6 +255,7 @@ describe('Game', function() {
             game.newRound();
             expect(game.round).to.equal(5);
         });
+
         it('newRound: After 5 rounds, call multiplayer.gameOver', function() {
             const game = new Game();
             const spy = sinon.stub(game.multiplayer, 'sendGameOver').resolves(true);

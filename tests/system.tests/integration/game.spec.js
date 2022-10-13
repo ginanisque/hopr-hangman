@@ -1,10 +1,14 @@
 import { expect } from 'chai';
 import Game from '../../../src/game/game';
 import sowpodslist from '../../../src/wordlists/sowpods.js';
-
-// import "../config.js";
+import { mockFetch } from '../../mocks.js';
+import sinon from 'sinon';
 
 describe('Game', function() {
+    after(() => {
+        sinon.restore();
+    });
+
     it.skip('Game should not repeat any words', function() {
         this.timeout(30000);
         const pastAnswers = [];
@@ -35,6 +39,8 @@ describe('Game', function() {
     });
 
     it('View previous round words and guesses', function() {
+        mockFetch();
+
         const game = new Game();
         game.answer = 'foobar';
 

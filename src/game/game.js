@@ -16,22 +16,69 @@ class Game {
     _gameOver=false;
 
     constructor(otherConfig={}) {
+        this.gameStarted = false;
         this.config = otherConfig;
         this.otherPlayers = otherConfig.otherPlayers || [];
         this.gameCreator = otherConfig.gameCreator;
 
         this.initGame();
-        this.setup();
+        // this.setupMultiplayer();
     }
 
-    setup() {
+    /*
+    setupMultiplayer() {
         const otherPlayers = this.otherPlayers;
 
         this.multiplayer = new Multiplayer(this.otherPlayers, this.gameCreator);
+        if(this.multiplayer.isGameCreator) {
+            const answers = this.generateAnswers();
+            this.multiplayer.answers = answers;
+        }
+    }
+    */
+
+    get answers() {
+        if(this.multiplayer && this.multiplayer.answers)
+            return this.multiplayer.answers;
+        else return null;
     }
 
-    startGame() {
-        return this.multiplayer.start();
+    get loading() {
+        return this.multiplayer.isReady == false;
+    }
+
+    get isReady() {
+        return this.multiplayer.isReady && this.gameStarted;
+    }
+
+    async startGame() {
+        if(this.multiplayer)
+            await this.multiplayer.start()
+
+        if(this.gameStarted == false) {
+            if(this.loading == false) {
+                // Initialise first round
+                this.initRound();
+
+                this.gameStarted = true
+            }
+        }
+
+        return Promise.resolve(this.gameStarted);
+    }
+
+    generateAnswers() {
+        let answers = [];
+
+        let answer_ = randomWord(this.wordlist);
+
+        while(this.repeatedWord == true || answers.length < 5) {
+            answer_ = randomWord(this.wordlist);
+            if(!this.repeatedWord)
+                answers.push(answer_);
+        }
+
+        return answers;
     }
 
     initGame() {
@@ -41,16 +88,27 @@ class Game {
         this.roundOverAction = () => Promise.resolve(true);
         this._currentRound = 0;
 
-        this.initRound();
+        // Setup Multiplayer instance
+        const otherPlayers = this.otherPlayers;
+
+        this.multiplayer = new Multiplayer(this.otherPlayers, this.gameCreator);
+        if(this.multiplayer.isGameCreator) {
+            const answers = this.generateAnswers();
+            this.multiplayer.answers = answers;
+        }
     }
 
     initRound() {
         if(!this._gameOver) {
             this.word = null;
-            this.answer = randomWord(this.wordlist);
-
-            while(this.repeatedWord == true) {
+            if(this.answers)
+                this.answer = this.answers[this._currentRound];
+            else {
                 this.answer = randomWord(this.wordlist);
+
+                while(this.repeatedWord == true) {
+                    this.answer = randomWord(this.wordlist);
+                }
             }
 
             this._currentRound++;

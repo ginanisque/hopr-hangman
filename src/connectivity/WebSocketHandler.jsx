@@ -7,6 +7,7 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
   const websocket = useWebsocket({ wsEndpoint, securityToken })
   const { socketRef } = websocket
   const handleReceivedMessage = async (ev) => {
+      console.log("websocket received received data");
     try {
       let wsMsg;
 
@@ -19,8 +20,8 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
       const data = JSON.parse(wsMsg)
 
       setMessage(data)
-      game.multiplayer.parseMessage(data);
-      updateGame(game)
+      await game.multiplayer.parseMessage(data);
+      await updateGame(game)
 
     } catch (err) {
       console.error("Couldn't parse websocket message\n", err)
@@ -36,9 +37,9 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
     }
   }, [socketRef.current])
 
-  // return message || false;
   return false;
-  // return <span>{message ? message : 'You have no messages.'}</span>
+
+  // return <span>{message ? message : 'You have no messauges.'}</span>
 }
 
 export default WebSocketHandler
