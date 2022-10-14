@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as words from '../../../src/game/words';
 
-describe('Words and Phrases', function() {
+describe('Words and Phrases (unit tests)', function() {
     it('randomWord(): Returns random word', function() {
         const wordlist = ['feeee', 'fi', 'foh', 'fum'];
 

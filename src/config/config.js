@@ -29,6 +29,15 @@ class Config {
         return url;
     }
 
+    get isSet() {
+        if(this.restURL == null || this.restURL.trim() == '')
+            return false;
+        else if(!this.authToken)
+            return false;
+
+        else return true;
+    }
+
     set restURL(val) {
         this.save('apiEndpoint', val);
     }

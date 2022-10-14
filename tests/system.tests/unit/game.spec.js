@@ -3,31 +3,50 @@ import Game from '../../../src/game/game';
 import sowpodslist from '../../../src/wordlists/sowpods.js';
 import sinon from 'sinon';
 
-describe('Game', function() {
-    it('Game wordlist should be sowpods 5-words and over', function() {
+describe('Game (unit tests)', function() {
+    it('Game wordlist should be sowpods 5-words and over', async function() {
         const game = new Game();
+        await game.startGame();
+        expect(game.answer).to.be.a('string');
         expect(game.answer).to.be.oneOf(sowpodslist);
     });
 
-    it.skip('Game should not repeat any words', function() {
-        this.timeout(30);
-        const pastAnswers = [];
-
+    it.only('Before game is started, isReady should be false', function() {
         const game = new Game();
 
-        for(let i=0; i < sowpodslist.length - 1; i++) {
-            const answer = game.answer;
+        expect(game.isReady).to.be.false;
 
-            expect(answer).to.be.not.oneOf(pastAnswers);
-            pastAnswers.push(answer);
-            game.restart();
-        }
+        return game.startGame()
+        .then(() => {
+            expect(game.isReady).to.be.true;
+        });
     });
 
-    it('generateAnswers should generate an array of 5 answers', function() {
+    it.only('If game is not multiplayer game, set answer to random word', function() {
         const game = new Game();
-        game.generateAnswers();
-        expect(game.answers).to.have.lengthOf(5);
+
+        return game.startGame()
+        .then(() => {
+            expect(game.answer).to.not.be.null.and.to.not.be.undefined;
+            expect(game.answer).to.be.a('string');
+            console.log('answer:', game.answer);
+        });
+    });
+
+    it.only('If game is not multiplayer game, word should have length of game.answer', function() {
+        const game = new Game();
+
+        return game.startGame()
+        .then(() => {
+            expect(game.word).to.not.be.null.and.to.not.be.undefined;
+            expect(game.word).to.be.a('string');
+            expect(game.word).to.have.lengthOf(game.answer.length);
+        });
+    });
+
+    it('generateAnswers should return an array of 5 answers', async function() {
+        const game = new Game();
+        expect(game.generateAnswers()).to.have.lengthOf(5);
     });
 
     it('game.word should return empty str with length equal to answer', function() {
@@ -43,8 +62,9 @@ describe('Game', function() {
         expect(game.word).to.equal('________');
     });
 
-    it('When letter is guessed correctly, replace underscores in word with letter', function() {
+    it('When letter is guessed correctly, replace underscores in word with letter', async function() {
         let game = new Game();
+        await game.startGame();
 
         game.answer = 'foobar';
         game.guessLetter('o');
@@ -53,6 +73,8 @@ describe('Game', function() {
         expect(game.word).to.equal('foo___');
 
         game = new Game();
+        await game.startGame();
+
         game.answer = 'icecream';
         game.guessLetter('e');
         expect(game.word).to.equal('__e__e__');
@@ -66,8 +88,9 @@ describe('Game', function() {
         expect(game.word).to.equal('icecrea_');
     });
 
-    it('when letter is guessed correctly, return true', function() {
+    it('when letter is guessed correctly, return true', async function() {
         const game = new Game();
+        await game.startGame();
 
         game.answer = 'foobar';
         expect(game.guessLetter('o')).to.be.true;
@@ -77,8 +100,9 @@ describe('Game', function() {
         expect(game.guessLetter('e')).to.be.true;
     });
 
-    it('When incorrect letter is guessed, return false', function() {
+    it('When incorrect letter is guessed, return false', async function() {
         const game = new Game();
+        await game.startGame();
 
         game.answer = 'foobar';
         expect(game.guessLetter('n')).to.be.false;
@@ -88,8 +112,9 @@ describe('Game', function() {
         expect(game.guessLetter('o')).to.be.false;
     });
 
-    it('When incorrect letter is guessed, add letter to game.incorrectGuesses', function() {
+    it('When incorrect letter is guessed, add letter to game.incorrectGuesses', async function() {
         let game = new Game();
+        await game.startGame();
 
         game.answer = 'foobar';
         game.guessLetter('n');
@@ -98,13 +123,17 @@ describe('Game', function() {
         expect(game.wrongGuesses).to.have.members(['n', 'q']);
 
         game = new Game();
+        await game.startGame();
+
         game.answer = 'icecream';
         game.guessLetter('o');
         expect(game.wrongGuesses).to.have.members(['o']);
     });
 
-    it('When correct letter is guessed, add letter to game.correctGuesses', function() {
+    it('When correct letter is guessed, add letter to game.correctGuesses', async function() {
         let game = new Game();
+        await game.startGame();
+
         game.answer = 'foobar';
         game.guessLetter('o');
         game.guessLetter('f');
@@ -114,6 +143,8 @@ describe('Game', function() {
 
 
         game = new Game();
+        await game.startGame();
+
         game.answer = 'icecream';
         game.guessLetter('i');
         game.guessLetter('r');
@@ -121,8 +152,10 @@ describe('Game', function() {
         expect(game.correctGuesses).to.have.members(['i', 'r', 'e']);
     });
 
-    it('When adding letters to guesses, do not mix correct and incorrect guesses', function() {
+    it('When adding letters to guesses, do not mix correct and incorrect guesses', async function() {
         let game = new Game();
+        await game.startGame();
+
         game.answer = 'foobar';
 
         game.guessLetter('n');
@@ -137,6 +170,8 @@ describe('Game', function() {
 
 
         game = new Game();
+        await game.startGame();
+
         game.answer = 'icecream';
 
         game.guessLetter('o');
@@ -155,8 +190,9 @@ describe('Game', function() {
         expect(game.rounds, 'rounds should be empty array').to.be.an('array').that.is.empty;
     });
 
-    it('When correct letter is guessed, do not increment incorrectGuesses', function() {
+    it('When correct letter is guessed, do not increment incorrectGuesses', async function() {
         let game = new Game();
+        await game.startGame();
 
         game.answer = 'foobar';
         game.guessLetter('o');
@@ -165,6 +201,8 @@ describe('Game', function() {
         expect(game.incorrectGuesses).to.equal(0);
 
         game = new Game();
+        await game.startGame();
+
         game.answer = 'icecream';
         game.guessLetter('i');
         expect(game.incorrectGuesses).to.equal(0);
@@ -172,8 +210,10 @@ describe('Game', function() {
         expect(game.incorrectGuesses).to.equal(0);
     });
 
-    it('When incorrect letter is guessed, increment incorrectGuesses', function() {
+    it('When incorrect letter is guessed, increment incorrectGuesses', async function() {
         let game = new Game();
+        await game.startGame();
+
         game.answer = 'foobar';
         expect(game.guessLetter('n')).to.be.false;
         expect(game.incorrectGuesses).to.equal(1);
@@ -181,19 +221,25 @@ describe('Game', function() {
         expect(game.incorrectGuesses).to.equal(2);
 
         game = new Game();
+        await game.startGame();
+
         game.answer = 'icecream';
         expect(game.guessLetter('o')).to.be.false;
         expect(game.incorrectGuesses).to.equal(1);
     });
 
-    it('New game object config', function() {
+    it('New game object config', async function() {
         const game = new Game();
+        await game.startGame();
+
         expect(game.round).to.equal(1);
         expect(game.score).to.equal(0);
     });
 
-    it('If word == answer, call newRound', function() {
+    it('When word is fully guessed, call newRound', async function() {
         let game = new Game();
+        await game.startGame();
+
         const spy = sinon.spy(game, 'newRound');
 
         game.answer = 'foobar';
@@ -201,48 +247,60 @@ describe('Game', function() {
         game.word = 'fooba_';
 
         sinon.assert.notCalled(spy);
-        game.word = 'foobar';
+        game.guessLetter('r');
         sinon.assert.calledOnce(spy);
     });
 
     describe('Setting score: If word == answer', function() {
-        it('if wrong guesses <= 3, set score = 5', function() {
+        it('if wrong guesses <= 3, set score = 5', async function() {
             let game = new Game();
+            await game.startGame();
+
             game.answer = 'foobar';
 
             game.word = 'fooba_';
             expect(game.score).to.equal(0);
-            game.word = 'foobar';
+            game.guessLetter('r');
             expect(game.score).to.equal(5);
         })
-        it('if wrong guesses > 3, set score', function() {
+        it('if wrong guesses > 3, set score to less than 5', async function() {
             let game = new Game();
+            await game.startGame();
+
             game.answer = 'foobar';
             game.incorrectGuesses = 4;
-            game.word = 'foobar';
+            game.word = 'fooba_';
+            game.guessLetter('r');
             expect(game.score).to.equal(4);
 
             game = new Game();
+            await game.startGame();
             game.answer = 'icecream';
             game.incorrectGuesses = 5;
-            game.word = 'icecream';
+            game.word = 'i_e_ream';
+            game.guessLetter('c');
             expect(game.score).to.equal(3);
         })
 
-        it('Set score to equal score from previous round + current round score', function() {
+        it('Set score to equal score from previous round + current round score', async function() {
             let game = new Game();
+            await game.startGame();
+
             game.score = 3;
 
             game.answer = 'icecream';
             game.incorrectGuesses = 4;
-            game.word = 'icecream';
+            game.word = 'icecre_m';
+            game.guessLetter('a');
             expect(game.score).to.equal(7);
         })
     });
 
     describe('NewRound()', function() {
-        it('newRound should increase round number by one', function() {
+        it('newRound should increase round number by one', async function() {
             const game = new Game();
+            await game.startGame();
+
             expect(game.round).to.equal(1);
 
             game.newRound();
@@ -256,9 +314,11 @@ describe('Game', function() {
             expect(game.round).to.equal(5);
         });
 
-        it('newRound: After 5 rounds, call multiplayer.gameOver', function() {
+        it('newRound: After 5 rounds, call endGame', async function() {
             const game = new Game();
-            const spy = sinon.stub(game.multiplayer, 'sendGameOver').resolves(true);
+            const spy = sinon.stub(game, 'endGame').resolves(true);
+
+            await game.startGame();
 
             game.onGameOver(function() {
                 sinon.assert.calledWith(spy, sinon.match.has('gameScore'));
@@ -278,14 +338,25 @@ describe('Game', function() {
             expect(game.round).to.equal(5);
         });
 
-        it('newRound should reset goodKeys and badKeys arrays', function() {
+        it('newRound should reset goodKeys and badKeys arrays', async function() {
             const game = new Game();
+            await game.startGame();
+
+            game.answer = 'foobar';
+            game.correctGuesses = ['a', 'r', 'f'];
+            game.wrongGuesses = ['i', 'n', 'e', 'u'];
+
             game.newRound();
+
+            expect(game.correctGuesses).to.be.empty;
+            expect(game.wrongGuesses).to.be.empty;
         });
     });
 
-    it('If incorrectGuesses = 8, start new round (newRound())', function() {
+    it('If incorrectGuesses = 8, start new round (newRound())', async function() {
         const game = new Game();
+        await game.startGame();
+
         const spy = sinon.spy(game, 'newRound');
 
         game.incorrectGuesses = 8;
@@ -320,6 +391,7 @@ describe('Game', function() {
     it('After every round, call sendRoundData() to send round data to to other players', function(done) {
         this.timeout(5000);
         const game = new Game();
+        game.startGame();
 
         const spy = sinon.stub(game, 'sendRoundData').resolves(true);
         game.onRoundOver(function() {

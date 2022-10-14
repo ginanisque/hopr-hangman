@@ -19,6 +19,7 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
 
       const data = JSON.parse(wsMsg)
 
+        console.log("ev:", data);
       setMessage(data)
       await game.multiplayer.parseMessage(data);
       await updateGame(game)

@@ -54,22 +54,51 @@ describe('Multiplayer Game (unit tests):', function() {
             });
     });
 
-    describe("Other multiplayer", function() {
-        it('If game.loading == true, game.startGame should fail', function() {
+    describe("Other multiplayer tests", function() {
+        it('If no multiplayer config set, startGame should return true', function() {
             const game = new Game();
+            return game.startGame()
+                .then(res => {
+                    expect(res, 'start game res').to.be.true;
+                    expect(game.gameStarted).to.be.true;
+                });
+        });
+        it('If game.isReady == false, game.startGame should fail', function() {
+            const currentUser = '16ajoi'+ faker.random.alphaNumeric(16);
+            const p2 = '16ajoi'+ faker.random.alphaNumeric(16);
 
-            sinon.stub(game, 'loading').get(sinon.fake.returns(true));
+            const configObj = {
+                multiplayer: true,
+                connectGame: false,
+                otherPlayers: [],
+                gameCreator: p2
+            };
+
+            const game = new Game(configObj);
+
+            sinon.stub(game, 'isReady').get(sinon.fake.returns(false));
 
             expect(game.startGame()).to.eventually.be.false;
-            expect(game.answer).to.be.null;
+            expect(game.answer).to.be.undefined;
         });
 
         it('If game.loading == false, game.startGame should set game answer to first multiplayer answer', function() {
-            const game = new Game();
+            const currentUser = '16ajoi'+ faker.random.alphaNumeric(16);
+            const p2 = '16ajoi'+ faker.random.alphaNumeric(16);
+
+            const configObj = {
+                multiplayer: true,
+                connectGame: false,
+                otherPlayers: [],
+                gameCreator: p2
+            };
+
+            const game = new Game(configObj);
 
             sinon.stub(game, 'loading').get(sinon.fake.returns(false));
             const initAnswer = 'perfume';
 
+            game.multiplayer.isReady = true;
             game.multiplayer.answers = [initAnswer, 'wjoifwa', 'iofw', 'jfiowe', 'flower'];
 
             return expect(game.startGame()).to.eventually.be.true

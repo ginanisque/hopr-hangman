@@ -5,15 +5,15 @@ import { faker } from '@faker-js/faker';
 import { fakeHoprAddress } from '../../helpers';
 import Multiplayer from '../../../src/game/multiplayer.js';
 
-describe("Multiplayer", function() {
+describe("Multiplayer (unit tests)", function() {
     it('If otherPlayers == null, do not carry out any actions');
 
     it('Start(): If user is gameCreator, create gameID', function() {
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
 
-        const p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [
             p4, p5
@@ -33,11 +33,11 @@ describe("Multiplayer", function() {
     });
 
     it('Start(): If gameCreator is user, call createGame', function() {
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
 
-        const p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [
             p4, p5
@@ -59,11 +59,20 @@ describe("Multiplayer", function() {
             })
     });
 
-    it('Start(): After starting game, set playerData for self', function() {
-        const p1 = process.env.REACT_APP_TEST_PEER_ID1;
+    it('isReady: If multiplayer.answers is not set, return false', function() {
+        const gameCreator = fakeHoprAddress();
+        const otherPlayers = [fakeHoprAddress(), fakeHoprAddress()]
 
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+        const multiplayer = new Multiplayer([], gameCreator);
+
+        expect(multiplayer.isReady).to.be.false;
+    });
+
+    it('Start(): After starting game, set playerData for self', function() {
+        const p1 = fakeHoprAddress();
+
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress();
 
         const otherPlayers = [
             p2, p3
@@ -87,12 +96,12 @@ describe("Multiplayer", function() {
 
     it('Start(): If gameCreator is user, send addresses of all players to all users', function() {
         this.timeout(5000);
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
 
-        const p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [
             p3, p4, p5
@@ -118,18 +127,18 @@ describe("Multiplayer", function() {
     });
 
     it.skip('AllowNewRound should return false if any players are more than one round behind', function() {
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
 
-        const multiplayer = new Multiplayer([process.env.REACT_APP_TEST_PEER_ID3]);
+        const multiplayer = new Multiplayer([fakeHoprAddress()]);
 
         sinon.stub(multiplayer, 'getAddress').resolves(ownAddress);
 
         const randRoundData = {num:1, guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7, type: 'roundData'};
 
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4;
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress();
 
         multiplayer.saveRound({...randRoundData, peerId: gameCreator, num: 3})
         multiplayer.saveRound({...randRoundData, peerId: p2, num: 1})
@@ -140,16 +149,16 @@ describe("Multiplayer", function() {
     });
 
     it.skip('AllowNewRound should return true if all players are at same round', function() {
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
 
-        const multiplayer = new Multiplayer([process.env.REACT_APP_TEST_PEER_ID3]);
+        const multiplayer = new Multiplayer([fakeHoprAddress()]);
 
         sinon.stub(multiplayer, 'getAddress').resolves(ownAddress);
 
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4;
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress();
 
         const randRoundData = {num:1, guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7, type: 'roundData'};
         multiplayer.saveRound({...randRoundData, peerId: gameCreator, num: 3})
@@ -161,13 +170,13 @@ describe("Multiplayer", function() {
     });
 
     it('Start(): If gameCreator is another player, call connectGame', function() {
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
-        const gameCreator = process.env.REACT_APP_TEST_PEER_ID2;
+        const ownAddress = fakeHoprAddress();
+        const gameCreator = fakeHoprAddress();
 
         const otherPlayers = [
             gameCreator,
-            process.env.REACT_APP_TEST_PEER_ID4,
-            process.env.REACT_APP_TEST_PEER_ID5
+            fakeHoprAddress(),
+            fakeHoprAddress()
         ]
 
         const multiplayer = new Multiplayer(otherPlayers, gameCreator);
@@ -187,10 +196,10 @@ describe("Multiplayer", function() {
 
     it('CreateGame: should establishChannel() to all other players', function() {
         this.timeout(9000);
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [
             p2, p3, p4, p5
@@ -213,10 +222,10 @@ describe("Multiplayer", function() {
 
     it('CreateGame: should send startGame message with game ID', function() {
         this.timeout(5000);
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [
             p2, p3, p4, p5
@@ -242,10 +251,10 @@ describe("Multiplayer", function() {
     it('CreateGame: if establishChannel() throws because channel is open, continue', function() {
         this.timeout(5000);
 
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [p2, p3, p4, p5];
 
@@ -258,7 +267,7 @@ describe("Multiplayer", function() {
     });
 
     it('ConnectGame: if establishChannel() throws because channel is open, continue', function() {
-        const creator = process.env.REACT_APP_TEST_PEER_ID3;
+        const creator = fakeHoprAddress();
         const multiplayer = new Multiplayer(null, creator);
 
         const spy = sinon.stub(multiplayer, 'establishChannel').rejects("CHANNEL_ALREADY_OPEN");
@@ -270,7 +279,7 @@ describe("Multiplayer", function() {
     });
 
     it('ConnectGame: Call establish channel to game creator', function() {
-        const gameCreator = process.env.REACT_APP_TEST_PEER_ID3;
+        const gameCreator = fakeHoprAddress();
         const multiplayer = new Multiplayer([], gameCreator);
 
         const spy = sinon.stub(multiplayer, 'establishChannel').resolves(true);
@@ -281,10 +290,11 @@ describe("Multiplayer", function() {
             });
     });
 
-    it("SaveRound: update player gameScore everytime it's called", function() {
-        const multiplayer = new Multiplayer([process.env.REACT_APP_TEST_PEER_ID3]);
+    it("SaveRound: update player gameScore everytime it's called", async function() {
+        const player1 = fakeHoprAddress();
+        const player2 = fakeHoprAddress();
 
-        const player2 = process.env.REACT_APP_TEST_PEER_ID3;
+        const multiplayer = new Multiplayer([player2]);
 
         const r1 = {num:1, guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7, type: 'roundData', peerId: player2};
         const r2 = {num:2, guess:"______",word:"fogles",roundScore:0, app:'hangman', gameScore: 7, type: 'roundData', peerId: player2};
@@ -364,12 +374,12 @@ describe("Multiplayer", function() {
     });
 
     it('chooseWinner if all players have sent gameOver, call chooseWinner', async function() {
-        const ownAddress = process.env.REACT_APP_TEST_PEER_ID1;
+        const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
 
-        const p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4;
+        const p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress();
 
         const multiplayer = new Multiplayer([p2, p3, p4]);
 
@@ -393,10 +403,10 @@ describe("Multiplayer", function() {
     it('ChooseWinner: set winner as player with highest score', function() {
         this.timeout(6000);
 
-        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
-            p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4;
+        const p1 = fakeHoprAddress(),
+            p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress();
 
         const gameCreator = p1;
 
@@ -431,11 +441,11 @@ describe("Multiplayer", function() {
     });
 
     it('ReceiveRoundScores: If player is game creator, send round scores to all other players', function() {
-        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
-            p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3,
-            p4 = process.env.REACT_APP_TEST_PEER_ID4,
-            p5 = process.env.REACT_APP_TEST_PEER_ID5;
+        const p1 = fakeHoprAddress(),
+            p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
 
         const otherPlayers = [
             p2, p3, p4, p5
@@ -463,9 +473,9 @@ describe("Multiplayer", function() {
     });
 
     it('ReceiveRoundScores: If player is not game creator, do not send round scores', function() {
-        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
-            p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+        const p1 = fakeHoprAddress(),
+            p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress();
 
         const roundData = {score: 3, peerId: p3}
 
@@ -496,9 +506,9 @@ describe("Multiplayer", function() {
 
     it('SendGameOver: Should set gameover to true for player', function() {
         this.timeout(5000);
-        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
-            p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+        const p1 = fakeHoprAddress(),
+            p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress();
 
         const otherPlayers = [p2, p3]
 
@@ -530,9 +540,9 @@ describe("Multiplayer", function() {
 
     it('ReceiveGameOver: Should set gameover to true for player', function() {
         this.timeout(5000);
-        const p1 = process.env.REACT_APP_TEST_PEER_ID1,
-            p2 = process.env.REACT_APP_TEST_PEER_ID2,
-            p3 = process.env.REACT_APP_TEST_PEER_ID3;
+        const p1 = fakeHoprAddress(),
+            p2 = fakeHoprAddress(),
+            p3 = fakeHoprAddress();
 
         const otherPlayers = [p2, p3]
 

@@ -18,6 +18,12 @@ describe("Multiplayer game (integration tests) - Parse message", function() {
         sinon.restore();
     });
 
+    it('If no multiplayer config is set, game.multiplayer should be null', function() {
+        const game = new Game();
+
+        expect(game.multiplayer).to.be.null;
+    });
+
     it('If multiplayer instance receives "startGame" message, game should be inited properly', async function() {
         this.timeout(5000);
         const gameCreator = fakeHoprAddress();
@@ -78,7 +84,7 @@ describe("Multiplayer game (integration tests) - Parse message", function() {
             })
     });
 
-    it('If receiving startGame message, set game.answers to message.answers', async function() {
+    it('If receiving startGame message, set game.answers to message.answers', function() {
         this.timeout(5000);
         const gameCreator = fakeHoprAddress();
 
@@ -90,8 +96,6 @@ describe("Multiplayer game (integration tests) - Parse message", function() {
 
         const game = new Game(configObj);
 
-        game.startGame();
-
         const answers = ['amfoiw', 'jfoewa', 'jfwif', 'fjihaid', 'jfiq'];
 
         const players = [gameCreator, fakeHoprAddress()];
@@ -99,6 +103,7 @@ describe("Multiplayer game (integration tests) - Parse message", function() {
         const wsMessage = JSON.stringify({app: 'hangman', type: 'startGame', players, answers});
 
         return game.multiplayer.parseMessage(wsMessage)
+            .then(() => game.startGame())
             .then(() => {
                 expect(game.answers).to.eql(answers);
                 expect(game.answer).to.equal(answers[0]);

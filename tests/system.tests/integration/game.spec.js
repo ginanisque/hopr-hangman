@@ -9,23 +9,9 @@ describe('Game', function() {
         sinon.restore();
     });
 
-    it.skip('Game should not repeat any words', function() {
-        this.timeout(30000);
-        const pastAnswers = [];
-
+    it('After 8 wrong guesses, start new round', async function() {
         const game = new Game();
-
-        for(let i=0; i < sowpodslist.length - 1; i++) {
-            const answer = game.answer;
-
-            expect(answer).to.be.not.oneOf(pastAnswers);
-            pastAnswers.push(answer);
-            game.newRound();
-        }
-    });
-
-    it('After 8 wrong guesses, start new round', function() {
-        const game = new Game();
+        await game.startGame();
         game.answer = 'foobar';
 
         ['a', 'b', 'e', 'f', 'g', 'z', 'i', 'k', 'p', 'q']
@@ -38,10 +24,12 @@ describe('Game', function() {
         expect(game.round).to.equal(2);
     });
 
-    it('View previous round words and guesses', function() {
+    it('View previous round words and guesses', async function() {
         mockFetch();
 
         const game = new Game();
+        await game.startGame();
+
         game.answer = 'foobar';
 
         game.guessLetter('i');

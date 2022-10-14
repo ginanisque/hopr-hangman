@@ -79,11 +79,10 @@ class Multiplayer {
                 .catch(e => {
                     if(e == "CHANNEL_ALREADY_OPEN")
                         return true;
-                    else  {
-                        console.error(e);
+                    else {
+                        console.error("Error opening channel", e);
                         throw e;
                     }
-                    
                 });
     }
 

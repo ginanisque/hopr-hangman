@@ -22,41 +22,33 @@ class Game {
         this.gameCreator = otherConfig.gameCreator;
 
         this.initGame();
-        // this.setupMultiplayer();
     }
-
-    /*
-    setupMultiplayer() {
-        const otherPlayers = this.otherPlayers;
-
-        this.multiplayer = new Multiplayer(this.otherPlayers, this.gameCreator);
-        if(this.multiplayer.isGameCreator) {
-            const answers = this.generateAnswers();
-            this.multiplayer.answers = answers;
-        }
-    }
-    */
 
     get answers() {
         if(this.multiplayer && this.multiplayer.answers)
             return this.multiplayer.answers;
+
         else return null;
     }
 
     get loading() {
-        return this.multiplayer.isReady == false;
+        return !this.isReady;
     }
 
     get isReady() {
-        return this.multiplayer.isReady && this.gameStarted;
+        if(this.multiplayer) {
+            return this.multiplayer.isReady;
+        } else
+            return true;
     }
 
     async startGame() {
+        console.log('starting game');
         if(this.multiplayer)
             await this.multiplayer.start()
 
         if(this.gameStarted == false) {
-            if(this.loading == false) {
+            if(this.isReady) {
                 // Initialise first round
                 this.initRound();
 
@@ -64,6 +56,7 @@ class Game {
             }
         }
 
+        console.log('game started?', this.gameStarted);
         return Promise.resolve(this.gameStarted);
     }
 
@@ -89,13 +82,13 @@ class Game {
         this._currentRound = 0;
 
         // Setup Multiplayer instance
-        const otherPlayers = this.otherPlayers;
-
-        this.multiplayer = new Multiplayer(this.otherPlayers, this.gameCreator);
-        if(this.multiplayer.isGameCreator) {
-            const answers = this.generateAnswers();
-            this.multiplayer.answers = answers;
-        }
+        if(this.gameCreator || (this.otherPlayers && this.otherPlayers.length > 0)) {
+            this.multiplayer = new Multiplayer(this.otherPlayers, this.gameCreator);
+            if(this.multiplayer.isGameCreator) {
+                const answers = this.generateAnswers();
+                this.multiplayer.answers = answers;
+            }
+        } else this.multiplayer = null;
     }
 
     initRound() {
@@ -144,12 +137,14 @@ class Game {
 
             if(this._currentRound < 5)
                 this.initRound();
-            else this.gameOver();
+            else this.endGame();
         }
     }
 
     sendRoundData(roundData) {
-        return this.multiplayer.sendRoundScores(roundData);
+        if(this.multiplayer)
+            return this.multiplayer.sendRoundScores(roundData);
+        else return Promise.resolve(true);
     }
 
     get score() {
@@ -160,7 +155,14 @@ class Game {
     }
 
     get answer() {
-        return this._answer;
+        if(this.answers) {
+            const answer = this.answers[this._currentRound - 1];
+
+            if(answer)
+                return answer;
+        }
+        else
+            return this._answer;
     }
     set answer(val) {
         if(this.pastAnswers.includes(val)) {
@@ -191,17 +193,6 @@ class Game {
     // If player guesses word correctly, start new round
     set word(val) {
         this._word = val;
-
-        if(val === this.answer) {
-            let roundScore_ = MAX_SCORE;
-
-            if(this.incorrectGuesses > 3)
-                roundScore_ = roundScore_ - (this.incorrectGuesses - 3);
-
-            this.score += roundScore_;
-            // this.roundScore = roundScore_
-            this.newRound(roundScore_);
-        }
     }
 
     get incorrectGuesses() {
@@ -249,6 +240,17 @@ class Game {
                 this.incorrectGuesses++
             }
 
+            if(this.word === this.answer) {
+                let roundScore_ = MAX_SCORE;
+
+                if(this.incorrectGuesses > 3)
+                    roundScore_ = roundScore_ - (this.incorrectGuesses - 3);
+
+                this.score += roundScore_;
+                // this.roundScore = roundScore_
+                this.newRound(roundScore_);
+            }
+
             return isCorrect;
         } else return null;
     }
@@ -257,11 +259,19 @@ class Game {
         this.gameOverAction = cb;
     }
 
-    gameOver() {
+    get gameOver() {
+        return this._gameOver;
+    }
+
+    endGame() {
         this._gameOver = true;
 
         return Promise.resolve(true)
-            .then(() => this.multiplayer.sendGameOver({score: this.score}))
+            .then(() => {
+                if(this.multiplayer)
+                    return this.multiplayer.sendGameOver({score: this.score})
+                else return Promise.resolve(true);
+            })
             .then(() =>this.gameOverAction());
     }
 

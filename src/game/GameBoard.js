@@ -11,6 +11,7 @@ import RoundOverScreen from './RoundOverScreen.js';
 
 class GameView extends React.Component {
     constructor(props) {
+        console.log('game view');
         super();
 
         this.state = {
@@ -26,6 +27,7 @@ class GameView extends React.Component {
     }
 
     componentDidMount() {
+        console.log('should start game');
         return this.state.game.startGame()
             .then(res => {
                 this.updateGame(this.state.game);
@@ -70,63 +72,78 @@ class GameView extends React.Component {
                         />
                     }
 
-                    <div className='game__player-list player-list'>
-                        <p className='player-list__title'>Players</p>
-                        <p className='game__player player-list__player-details'>You <span className='player__score'>{game.score}</span></p>
-                        { game.multiplayer.otherPlayers.map((addr, index) => (
-                            <p className='game__player player' key={"player" + index}>
-                                <span className="player-list__address">{addr.substring(0, 12) + "..." + addr.substring(addr.length-6)}</span>
-                                { this.state.game.multiplayer.getScore(addr) != null &&
-                                        <span className='player__score'> {
-                                            this.state.game.multiplayer.getScore(addr)}</span>
-                                }
-                            </p>
-                            )
-                        ) }
-                    </div>
+                    { this.state.game.gameOver && (
+                        <div className = 'modal modal_game-over'>
+                            <div className ='modal__content card'>
+                                <p className='text_title'>Game Over</p>
+
+                                {game.multiplayer && game.multiplayer.winner && <p>Winner: {game.multiplayer.winner}</p>}
+                            </div>
+                        </div>
+                    )}
+                    { game.multiplayer && 
+                        <div className='game__player-list player-list'>
+                            <p className='player-list__title'>Players</p>
+                            <p className='game__player player-list__player-details'>You <span className='player__score'>{game.score}</span></p>
+                            { game.multiplayer.otherPlayers.map((addr, index) => (
+                                <p className='game__player player' key={"player" + index}>
+                                    <span className="player-list__address">{addr.substring(0, 12) + "..." + addr.substring(addr.length-6)}</span>
+                                    { this.state.game.multiplayer.getScore(addr) != null &&
+                                            <span className='player__score'> {
+                                                this.state.game.multiplayer.getScore(addr)}</span>
+                                    }
+                                </p>
+                                )
+                            ) }
+                        </div>
+                    }
 
                     <p>Score: {game.score}</p>
                     <p>Round: {game.round}</p>
 
-                    {game.multiplayer.winner && <p>Winner: {game.multiplayer.winner}</p>}
+                    { game.gameStarted && (
+                        <>
+                        <Hangman className='game__hangman' game={game} onGameUpdate={this.updateGame} />
+                        <Word className='game__word' game={game} onGameUpdate={this.updateGame} />
+                        <Keyboard className='game__keyboard' game={game} onGameUpdate={this.updateGame} />
 
-                    <Hangman className='game__hangman' game={game} onGameUpdate={this.updateGame} />
-                    <Word className='game__word' game={game} onGameUpdate={this.updateGame} />
-                    <Keyboard className='game__keyboard' game={game} onGameUpdate={this.updateGame} />
+                        <div className='word-history'>
+                            <h6>Past words</h6>
+                            { game.multiplayer && Object.values(game.multiplayer.getRounds())
+                                .map(round => {
+                                    return (
+                                        <>
+                                            <p>Round {round.num}</p>
+                                            <p>{round.guess.split("").map((letter, index) => {
+                                                let className = 'word-history__guess word-history__guess_';
+                                                if(letter == '_')
+                                                    className += 'bad';
+                                                else className += 'good'
 
-                    <div className='word-history'>
-                        <h6>Past words</h6>
-                        { Object.values(game.multiplayer.getRounds())
-                            .map(round => {
-                                return (
-                                    <>
-                                        <p>Round {round.num}</p>
-                                        <p>{round.guess.split("").map((letter, index) => {
-                                            let className = 'word-history__guess word-history__guess_';
-                                            if(letter == '_')
-                                                className += 'bad';
-                                            else className += 'good'
-
-                                                return <span className={className}>{round.word[index]}</span>;
-                                            })
-                                        }</p>
-                                    </>
-                                );
-                            })
-                        }
-                    </div>
+                                                    return <span className={className}>{round.word[index]}</span>;
+                                                })
+                                            }</p>
+                                        </>
+                                    );
+                                })
+                            }
+                        </div>
+                        </>
+                    )}
                 </div>
             );
         }
 
-        view = [view,
-            <WebSocketHandler
-                wsEndpoint = {appConfig.wsEndpoint}
-                securityToken = {appConfig.authToken}
-                game = {this.state.game}
-                updateGame = {this.updateGame}
-            />
-        ];
+        if(appConfig.isSet) {
+            view = [view,
+                    <WebSocketHandler
+                        wsEndpoint = {appConfig.wsEndpoint}
+                        securityToken = {appConfig.authToken}
+                        game = {this.state.game}
+                        updateGame = {this.updateGame}
+                    />
+            ];
+        }
 
         return view;
     }
