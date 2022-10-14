@@ -1,4 +1,10 @@
 import React from 'react';
+import pose1 from '../assets/hangman-drawings/pose1.png';
+import pose2 from '../assets/hangman-drawings/pose2.png';
+import eyes from '../assets/hangman-drawings/eyes.png';
+import deadEyes from '../assets/hangman-drawings/eyes-dead.png';
+import smile from '../assets/hangman-drawings/mouth-smile.png';
+import mouthOpen from '../assets/hangman-drawings/mouth-open.png';
 
 class Hangman extends React.Component {
     constructor(props) {
@@ -12,14 +18,34 @@ class Hangman extends React.Component {
     render() {
         const game = this.state.game;
         return (
-            <div className='game__hangman'>
-                <div className = 'hangman hangman__head'>
+            <div className='game__hangman game-drawing'>
+                <div className = 'game-drawing__hangman hangman'>
+                    {game.incorrectGuesses < 6 ?
+                        <img className='hangman__body' src={pose1} /> :
+                        <img className='hangman__body' src={pose2} />
+                    }
+
+                    {game.incorrectGuesses < 4 && ([
+                        <div className = 'hangman__face'>
+                            <img className='hangman__eyes' src={eyes} />
+                            <img className='hangman__mouth' src={smile} />
+                        </div>
+                    ])}
+
+                    {game.incorrectGuesses >= 4 && ([
+                        <div className = 'hangman__face'>
+                            {game.incorrectGuesses > 6 ?
+                                <img className='hangman__eyes' src={deadEyes} /> : 
+                                <>
+                                    <img className='hangman__eyes' src={eyes} />
+                                    <img className='hangman__mouth' src={mouthOpen} />
+                                </>
+                            }
+                        </div>
+                    ])}
                 </div>
 
-                <svg className = 'hangman hangman__noose'>
-                </svg>
-
-                <svg className = 'hangman hangman__gallows gallows'>
+                <svg className = 'gallows'>
                     {game.incorrectGuesses > 4 && 
                         <rect id='gallows__smallbeam' x='130' y='20' width='20' height='20' />
                     }

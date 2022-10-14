@@ -1,3 +1,4 @@
+import "./text/text.css";
 import "./card/card.css";
 import "./link/link.css";
 import "./button/button.css";
