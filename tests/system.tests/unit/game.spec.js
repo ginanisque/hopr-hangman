@@ -198,6 +198,8 @@ describe('Game (unit tests)', function() {
         game.guessLetter('o');
         expect(game.incorrectGuesses).to.equal(0);
         game.guessLetter('b');
+        game.guessLetter('b');
+        game.guessLetter('b');
         expect(game.incorrectGuesses).to.equal(0);
 
         game = new Game();
@@ -205,9 +207,37 @@ describe('Game (unit tests)', function() {
 
         game.answer = 'icecream';
         game.guessLetter('i');
+        game.guessLetter('i');
+        game.guessLetter('i');
         expect(game.incorrectGuesses).to.equal(0);
         game.guessLetter('m');
         expect(game.incorrectGuesses).to.equal(0);
+    });
+
+    it('If incorrect letter is guessed multiple times, increment only once for first wrong guess', async function() {
+        let game = new Game();
+        await game.startGame();
+
+        game.answer = 'foobar';
+        expect(game.guessLetter('n')).to.be.false;
+        expect(game.incorrectGuesses).to.equal(1);
+        expect(game.guessLetter('q')).to.be.false;
+        expect(game.incorrectGuesses).to.equal(2);
+        expect(game.guessLetter('q')).to.be.false;
+        expect(game.guessLetter('q')).to.be.false;
+        expect(game.guessLetter('q')).to.be.false;
+        expect(game.guessLetter('q')).to.be.false;
+        expect(game.incorrectGuesses).to.equal(2);
+
+        game = new Game();
+        await game.startGame();
+
+        game.answer = 'icecream';
+        expect(game.guessLetter('o')).to.be.false;
+        expect(game.incorrectGuesses).to.equal(1);
+        expect(game.guessLetter('o')).to.be.false;
+        expect(game.guessLetter('o')).to.be.false;
+        expect(game.incorrectGuesses).to.equal(1);
     });
 
     it('When incorrect letter is guessed, increment incorrectGuesses', async function() {
@@ -268,7 +298,7 @@ describe('Game (unit tests)', function() {
             await game.startGame();
 
             game.answer = 'foobar';
-            game.incorrectGuesses = 4;
+            sinon.stub(game, 'incorrectGuesses').get(() => 4);
             game.word = 'fooba_';
             game.guessLetter('r');
             expect(game.score).to.equal(4);
@@ -276,7 +306,7 @@ describe('Game (unit tests)', function() {
             game = new Game();
             await game.startGame();
             game.answer = 'icecream';
-            game.incorrectGuesses = 5;
+            sinon.stub(game, 'incorrectGuesses').get(() => 5);
             game.word = 'i_e_ream';
             game.guessLetter('c');
             expect(game.score).to.equal(3);
@@ -289,7 +319,7 @@ describe('Game (unit tests)', function() {
             game.score = 3;
 
             game.answer = 'icecream';
-            game.incorrectGuesses = 4;
+            sinon.stub(game, 'incorrectGuesses').get(() => 4);
             game.word = 'icecre_m';
             game.guessLetter('a');
             expect(game.score).to.equal(7);
@@ -356,11 +386,15 @@ describe('Game (unit tests)', function() {
     it('If incorrectGuesses = 8, start new round (newRound())', async function() {
         const game = new Game();
         await game.startGame();
+        game.word = 'yulpion';
 
         const spy = sinon.spy(game, 'newRound');
 
-        game.incorrectGuesses = 8;
+        game.wrongGuesses = ['a', 'b', 'c', 'd', 'e', 'f'];
+        game.guessLetter('g');
 
+        sinon.assert.notCalled(spy);
+        game.guessLetter('h');
         sinon.assert.calledOnce(spy);
     });
 

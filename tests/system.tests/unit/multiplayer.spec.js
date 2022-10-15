@@ -32,7 +32,7 @@ describe("Multiplayer (unit tests)", function() {
         expect(multiplayer.gameID).to.not.be.undefined;
     });
 
-    it.only('Start(): Do not allow double calls', function() {
+    it('Start(): Do not allow double calls', function() {
         const gameCreator = fakeHoprAddress();
 
         const p2 = fakeHoprAddress();
@@ -54,7 +54,7 @@ describe("Multiplayer (unit tests)", function() {
             multiplayer1.start(),
             multiplayer1.start(),
             multiplayer2.start(),
-            multiplayer2.start()
+            multiplayer2.start(),
         ])
             .then(() => {
 
@@ -264,7 +264,7 @@ describe("Multiplayer (unit tests)", function() {
             });
     });
 
-    it.only('CreateGame: should send startGame message with game ID', function() {
+    it('CreateGame: should send startGame message with game ID', function() {
         this.timeout(5000);
         const p2 = fakeHoprAddress(),
             p3 = fakeHoprAddress(),
@@ -484,6 +484,18 @@ describe("Multiplayer (unit tests)", function() {
                     expect(mm.chooseWinner()).to.equal(p3);
                 });
             });
+    });
+
+    it('Winner should return "You" if player address is same as winner address', function() {
+        const ownAddr = fakeHoprAddress();
+        const mm = new Multiplayer([fakeHoprAddress()]);
+
+        mm.address = ownAddr;
+
+        sinon.stub(mm, 'canChooseWinner').get(sinon.fake.returns(true));
+        sinon.stub(mm, 'chooseWinner').returns(ownAddr);
+
+        expect(mm.winner).to.equal("You");
     });
 
     it('ReceiveRoundScores: If player is game creator, send round scores to all other players', function() {

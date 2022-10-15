@@ -204,8 +204,8 @@ class Multiplayer {
                 }
             } else {
                 if(data.game_id && this.gameID) {
-                    if(this.gameID != data.game_id) {
-                        console.info("Wrong game id:", data.game_id);
+                    if(data.game_id != this.gameID) {
+                        console.info("Wrong game id received:", data.game_id, "\nGame id:", this.gameID);
                         return Promise.resolve(false);
                     }
 
@@ -339,8 +339,14 @@ class Multiplayer {
     get winner() {
         console.log("can i choose winner?", this.canChooseWinner);
         console.log("trying to choose winner");
-        if(this.canChooseWinner)
-            return this.chooseWinner();
+        if(this.canChooseWinner) {
+            let winner_ = this.chooseWinner();
+
+            if(winner_ == this.address)
+                winner_ = "You";
+
+            return winner_;
+        }
         else return null;
     }
 
@@ -399,7 +405,7 @@ class Multiplayer {
         if(!data || typeof data != 'object') {
             console.error("invalid rounds object", data);
         } else {
-            console.info("all rounds data:", data);
+            // console.info("all rounds data:", data);
 
             for(let key in data) {
                 if(/^\d+/.test(key))

@@ -9,7 +9,6 @@ class Game {
     repeatedWord = false
     _word = null;
     _currentRound = 1;
-    _incorrectGuesses = 0;
     _score = 0;
     rounds = [];
     isGameCreator=false;
@@ -109,7 +108,6 @@ class Game {
             this._currentRound++;
             this.wrongGuesses = [];
             this.correctGuesses = [];
-            this.incorrectGuesses = 0;
         }
     }
 
@@ -198,7 +196,8 @@ class Game {
     }
 
     get incorrectGuesses() {
-        return this._incorrectGuesses;
+        let wrongGuesses = this.wrongGuesses || [];
+        return wrongGuesses.length;
     }
     // If player has too many incorrect guesses (8), start new round
     set incorrectGuesses(val) {
@@ -208,6 +207,11 @@ class Game {
     }
 
     guessLetter(letter) {
+        if(this.correctGuesses.includes(letter))
+            return true;
+        if(this.wrongGuesses.includes(letter))
+            return false;
+
         if(!this._gameOver) {
             const answer = this.answer;
             let isCorrect = false;
@@ -239,10 +243,11 @@ class Game {
                 this.correctGuesses.push(letter);
             if(isCorrect === false) {
                 this.wrongGuesses.push(letter);
-                this.incorrectGuesses++
             }
 
-            if(this.word === this.answer) {
+            if(this.incorrectGuesses == 8)
+                this.newRound();
+            else if(this.word === this.answer) {
                 let roundScore_ = MAX_SCORE;
 
                 if(this.incorrectGuesses > 3)
