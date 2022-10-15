@@ -70,7 +70,7 @@ const useWebsocket = (settings) => {
       // handle errors
       socketRef.current.addEventListener('error', handleErrorEvent)
     } catch (err) {
-        console.log("err:", err);
+      console.log("err:", err);
       console.error('URL is invalid', settings.wsEndpoint)
     }
 
@@ -82,7 +82,8 @@ const useWebsocket = (settings) => {
       socketRef.current.removeEventListener('close', handleCloseEvent)
       socketRef.current.removeEventListener('error', handleErrorEvent)
     }
-  }, [settings.wsEndpoint, settings.securityToken])
+  }, [])
+  // }, [settings.wsEndpoint, settings.securityToken])
 
   return {
     state,

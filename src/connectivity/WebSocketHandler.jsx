@@ -7,7 +7,6 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
   const websocket = useWebsocket({ wsEndpoint, securityToken })
   const { socketRef } = websocket
   const handleReceivedMessage = async (ev) => {
-      console.log("websocket received received data");
     try {
       let wsMsg;
 
@@ -19,7 +18,6 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
 
       const data = JSON.parse(wsMsg)
 
-        console.log("ev:", data);
       setMessage(data)
       await game.multiplayer.parseMessage(data);
       await updateGame(game)
@@ -28,9 +26,12 @@ export const WebSocketHandler = ({ wsEndpoint, securityToken, game, updateGame }
       console.error("Couldn't parse websocket message\n", err)
     }
   }
+
   useEffect(() => {
     if (!socketRef.current) return
-    socketRef.current.addEventListener('message', handleReceivedMessage)
+
+    // socketRef.current.addEventListener('message', handleReceivedMessage)
+    socketRef.current.onmessage = handleReceivedMessage;
 
     return () => {
       if (!socketRef.current) return
