@@ -11,6 +11,9 @@ class Multiplayer {
         this.playerData = {};
         this._rounds = {}
 
+        this.isStarted = false;
+        this.starting = false;
+
         this.isReady = false;
 
         // Player is NOT game creator because multiplayer has a game creator property
@@ -30,23 +33,30 @@ class Multiplayer {
     }
 
     start() {
-        return this.getAddress()
-            .then(res => {
-                this.address = res;
+        if(!this.starting && !this.isStarted) {
+            this.starting = true;
+            return this.getAddress()
+                .then(res => {
+                    this.starting = false;
+                    if(res && typeof res == 'string' && res.trim() != "") {
+                        this.address = res;
+                        this.isStarted = true;
 
-                this.playerData[this.address] = {};
+                        this.playerData[this.address] = {};
 
-                const players = [ ...this.otherPlayers, this.address ];
-                this.setPlayers(players);
+                        const players = [ ...this.otherPlayers, this.address ];
+                        this.setPlayers(players);
 
-                if(res == this.gameCreator || !this.gameCreator) {
-                    this.isGameCreator = true;
-                    return this.createGame();
-                } else {
-                    this.isGameCreator = false;
-                    return this.connectGame(this.gameCreator);
-                }
-            });
+                        if(res == this.gameCreator || !this.gameCreator) {
+                            this.isGameCreator = true;
+                            return this.createGame();
+                        } else {
+                            this.isGameCreator = false;
+                            return this.connectGame(this.gameCreator);
+                        }
+                    }
+                });
+        } else return Promise.resolve();
     }
 
     setPlayers(playerArray) {
@@ -162,7 +172,6 @@ class Multiplayer {
     }
 
     parseMessage(wsMsg) {
-        console.log("wsmessage:", wsMsg, typeof wsMsg);
         let data = wsMsg;
 
         if(wsMsg && typeof wsMsg == 'object')

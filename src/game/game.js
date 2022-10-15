@@ -43,11 +43,13 @@ class Game {
     }
 
     async startGame() {
-        console.log('starting game');
-        if(this.multiplayer)
-            await this.multiplayer.start()
-
         if(this.gameStarted == false) {
+            console.log('starting game');
+            if(this.multiplayer) {
+                console.log("starting multiplayer");
+                await this.multiplayer.start()
+            }
+
             if(this.isReady) {
                 // Initialise first round
                 this.initRound();

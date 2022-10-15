@@ -32,6 +32,37 @@ describe("Multiplayer (unit tests)", function() {
         expect(multiplayer.gameID).to.not.be.undefined;
     });
 
+    it.only('Start(): Do not allow double calls', function() {
+        const gameCreator = fakeHoprAddress();
+
+        const p2 = fakeHoprAddress();
+
+        const otherPlayers = [
+            p2, fakeHoprAddress()
+        ]
+
+        const multiplayer1 = new Multiplayer(otherPlayers);
+        sinon.stub(multiplayer1, 'getAddress').resolves(gameCreator);
+
+        const multiplayer2 = new Multiplayer(null, gameCreator);
+        sinon.stub(multiplayer2, 'getAddress').resolves(p2);
+
+        const spy1 = sinon.stub(multiplayer1, 'createGame').resolves(true);
+        const spy2 = sinon.stub(multiplayer2, 'connectGame').resolves(true);
+
+        return Promise.all([
+            multiplayer1.start(),
+            multiplayer1.start(),
+            multiplayer2.start(),
+            multiplayer2.start()
+        ])
+            .then(() => {
+
+                sinon.assert.calledOnce(spy1);
+                sinon.assert.calledOnce(spy2);
+            });
+    });
+
     it('Start(): If gameCreator is user, call createGame', function() {
         const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;
@@ -119,6 +150,10 @@ describe("Multiplayer (unit tests)", function() {
             .then(() => {
                 otherPlayers.forEach(peerId => {
                     expect(peerId).to.be.a('string');
+                    expect(spy.withArgs(peerId, sinon.match.has('players',
+                        sinon.match.array.deepEquals([...otherPlayers, gameCreator]))).callCount)
+                        .to.equal(1, "Send message only once");
+
                     // sinon.assert.calledWith(spy, peerId, sinon.match.has('players'));
                     sinon.assert.calledWith(spy, peerId, sinon.match.has('players',
                         sinon.match.array.deepEquals([...otherPlayers, gameCreator])));
@@ -213,14 +248,23 @@ describe("Multiplayer (unit tests)", function() {
         return multiplayer.createGame()
             .then(() => {
                 sinon.assert.called(spy);
+
                 sinon.assert.calledWith(spy, p2)
+                expect(spy.withArgs(p2).callCount).to.equal(1);
+
                 sinon.assert.calledWith(spy, p3)
+                expect(spy.withArgs(p3).callCount).to.equal(1);
+
                 sinon.assert.calledWith(spy, p4)
+                expect(spy.withArgs(p4).callCount).to.equal(1);
+
                 sinon.assert.calledWith(spy, p5)
+                expect(spy.withArgs(p5).callCount).to.equal(1);
+
             });
     });
 
-    it('CreateGame: should send startGame message with game ID', function() {
+    it.only('CreateGame: should send startGame message with game ID', function() {
         this.timeout(5000);
         const p2 = fakeHoprAddress(),
             p3 = fakeHoprAddress(),
@@ -242,6 +286,8 @@ describe("Multiplayer (unit tests)", function() {
             .then(() => {
                 sinon.assert.called(spy);
                 sinon.assert.calledWith(spy, p2, sinon.match.has('game_id', gameID))
+                expect(spy.withArgs(p2, sinon.match.has('game_id', gameID)).callCount).to.equal(1);
+
                 sinon.assert.calledWith(spy, p3, sinon.match.has('game_id', gameID))
                 sinon.assert.calledWith(spy, p4, sinon.match.has('game_id', gameID))
                 sinon.assert.calledWith(spy, p5, sinon.match.has('game_id', gameID))

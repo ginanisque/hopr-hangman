@@ -11,18 +11,18 @@ describe('Game (unit tests)', function() {
         expect(game.answer).to.be.oneOf(sowpodslist);
     });
 
-    it.only('Before game is started, isReady should be false', function() {
+    it('Before game is started, gameStarted should be false', function() {
         const game = new Game();
 
-        expect(game.isReady).to.be.false;
+        expect(game.gameStarted).to.be.false;
 
         return game.startGame()
-        .then(() => {
-            expect(game.isReady).to.be.true;
-        });
+            .then(() => {
+                expect(game.gameStarted).to.be.true;
+            });
     });
 
-    it.only('If game is not multiplayer game, set answer to random word', function() {
+    it('If game is not multiplayer game, set answer to random word', function() {
         const game = new Game();
 
         return game.startGame()
@@ -33,7 +33,7 @@ describe('Game (unit tests)', function() {
         });
     });
 
-    it.only('If game is not multiplayer game, word should have length of game.answer', function() {
+    it('If game is not multiplayer game, word should have length of game.answer', function() {
         const game = new Game();
 
         return game.startGame()
