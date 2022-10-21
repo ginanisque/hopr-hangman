@@ -120,6 +120,67 @@ describe("Multiplayer (unit tests) - Parse message", function() {
             .then(() => expect(m0.answers).to.not.eql(answers))
     });
 
+    it('If message is startGame, but gameId in message matches multiplayer gameID,' +
+        "don't callsavePlayerData and do not save answers anymore", function() {
+        const ownAddress = fakeHoprAddress();
+        const gameCreator = ownAddress;
+
+        const gameID = 'ajfo-weafo-wnva';
+
+        const otherPlayers = [
+            fakeHoprAddress(), fakeHoprAddress(), fakeHoprAddress(), fakeHoprAddress(),
+        ]
+
+        const players = [
+            ...otherPlayers, gameCreator
+        ]
+
+        const multiplayer1 = new Multiplayer(undefined, gameCreator);
+        sinon.stub(multiplayer1, 'getAddress').resolves(otherPlayers[2]);
+
+        const multiplayer2 = new Multiplayer([], gameCreator);
+        sinon.stub(multiplayer2, 'getAddress').resolves(otherPlayers[1]);
+
+        const multiplayer3 = new Multiplayer(null, gameCreator);
+        sinon.stub(multiplayer3, 'getAddress').resolves(otherPlayers[3]);
+
+        multiplayer1.gameID = gameID;
+        multiplayer2.gameID = gameID;
+        multiplayer3.gameID = gameID;
+
+        const wsMsg = {app: 'hangman', type: 'startGame', players, 'game_id': gameID};
+
+        const spy1 = sinon.stub(multiplayer1, 'setPlayers');
+        const spy2 = sinon.stub(multiplayer2, 'setPlayers');
+        const spy3 = sinon.stub(multiplayer3, 'setPlayers');
+
+        // Start multiplayer games
+        return multiplayer1.start()
+            .then(multiplayer2.start())
+            .then(multiplayer3.start())
+
+
+        // Parse multiplayer messages
+            .then(() => {
+                // Reset spies in case there were any calls in .start()
+                spy1.resetHistory();
+                spy2.resetHistory();
+                spy3.resetHistory();
+
+                return multiplayer1.parseMessage(wsMsg)
+                    .then(() => multiplayer2.parseMessage(wsMsg))
+                    .then(() => multiplayer3.parseMessage(wsMsg))
+                    .then(() => multiplayer1.parseMessage(wsMsg))
+                    .then(() => multiplayer2.parseMessage(wsMsg))
+                    .then(() => multiplayer3.parseMessage(wsMsg))
+            })
+            .then(() => {
+                sinon.assert.notCalled(spy1);
+                sinon.assert.notCalled(spy3);
+                sinon.assert.notCalled(spy2);
+            });
+    });
+
     it('If message is roundData, call saveRound', function() {
         const player2 = fakeHoprAddress();
 

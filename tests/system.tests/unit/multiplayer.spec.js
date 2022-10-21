@@ -161,6 +161,60 @@ describe("Multiplayer (unit tests)", function() {
             })
     });
 
+    it.only('Start(): If gameCreator is user, send "startGame" message every fifteen seconds for five minutes after game starts', function() {
+        this.timeout(9000);
+
+        const clock = sinon.useFakeTimers(new Date());
+
+        const ownAddress = fakeHoprAddress();
+        const gameCreator = ownAddress;
+
+        const p3 = fakeHoprAddress(),
+            p4 = fakeHoprAddress(),
+            p5 = fakeHoprAddress();
+
+        const otherPlayers = [
+            p3, p4, p5
+        ]
+
+        const multiplayer = new Multiplayer(otherPlayers);
+
+        const generalSpy = sinon.stub(multiplayer, 'sendHoprMessage').resolves(true);
+        sinon.stub(multiplayer, 'establishChannel').resolves(true);
+        sinon.stub(multiplayer, 'getAddress').resolves(ownAddress);
+
+        expect(ownAddress == gameCreator);// Sanity check
+
+        // return expect(multiplayer.start()).to.be.fulfilled
+        multiplayer.start()
+
+        return Promise.all(
+            [
+               // {timeJump_s: 16, expectedCallCount: 1},
+                // {timeJump_s: 31, expectedCallCount: 2},
+                {timeJump_s: 61, expectedCallCount: 4},
+                {timeJump_s: 180, expectedCallCount: 12},
+                {timeJump_s: 301, expectedCallCount: 20},
+            ].map(({timeJump_s, expectedCallCount}) => {
+                return clock.tickAsync(timeJump_s * 1000)
+                    .then(() => {
+                        otherPlayers.forEach(peerId => {
+                            expect(peerId).to.be.a('string');
+
+                            const spy = generalSpy.withArgs(peerId);
+
+                            /*
+                    sinon.assert.calledWith(spy, peerId, sinon.match.has('players',
+                        sinon.match.array.deepEquals([...otherPlayers, gameCreator])));
+                        */
+
+                            sinon.assert.callCount(spy.withArgs(peerId, sinon.match.has('type', 'startGame')), expectedCallCount);
+                        })
+                    })
+            }))
+            .then(() => clock.restore());
+    });
+
     it.skip('AllowNewRound should return false if any players are more than one round behind', function() {
         const ownAddress = fakeHoprAddress();
         const gameCreator = ownAddress;

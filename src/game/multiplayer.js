@@ -100,6 +100,7 @@ class Multiplayer {
      * Creates game for others to connect to
      */
     createGame(cb) {
+        console.log('create game called');
         if(!this.isGameCreator)
             return Promise.reject("Only game creator can create game");
 
@@ -145,14 +146,26 @@ class Multiplayer {
                                 if(!addr || addr == "")
                                     return resolve(false);
 
-                                return this.sendMessage(addr, gameData)
-                                    .then(res => {
-                                        if(cb) {
-                                            return cb()
-                                                .then(res => resolve(res));
-                                        } else
-                                            return resolve(res)
-                                    })
+                                let callerTimer = 5 * 60 * 1000; // 5 minutes
+
+                                const caller = setInterval(() => {
+                                    return this.sendMessage(addr, gameData)
+                                        .then(res => {
+                                            console.log('calling timer after', (5 * 60 * 1000) - callerTimer);
+                                            console.log('\ncaller timer:', callerTimer);
+                                            callerTimer -= 15000;
+                                            console.log('caller timer:', callerTimer);
+
+                                            if(callerTimer < 0) {
+                                                clearInterval(caller)
+                                                return resolve(res);
+                                            } else if(cb) {
+                                                return cb()
+                                                    .then(res => resolve(res));
+                                            } else
+                                                return resolve(res)
+                                        })
+                                }, 15000);
                             },
                             400
                         )
@@ -195,12 +208,14 @@ class Multiplayer {
         if(data.app == 'hangman') {
             if(data.type == 'startGame') {
                 if(!this.isGameCreator) {
-                    const players = [...new Set([ ...data.players, this.address ])];
-                    this.answers = data.answers;
-                    this.setPlayers(players);
-                    this.gameID = data.game_id;
+                    if(data.game_id != this.gameID) {
+                        const players = [...new Set([ ...data.players, this.address ])];
+                        this.answers = data.answers;
+                        this.setPlayers(players);
+                        this.gameID = data.game_id;
 
-                    this.isReady = true;
+                        this.isReady = true;
+                    }
                 }
             } else {
                 if(data.game_id && this.gameID) {
